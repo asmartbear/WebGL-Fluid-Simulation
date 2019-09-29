@@ -37,12 +37,12 @@ let config = {
     VELOCITY_DISSIPATION: 0.4,
     PRESSURE: 0.2,				// 0.5
     PRESSURE_ITERATIONS: 20,
-    CURL: 5,					// vorticity (10)
+    CURL: 30,					// vorticity (10)
     SPLAT_RADIUS: 0.25,			// 0.25
     SPLAT_FORCE: 6000,
     SHADING: true,
     COLORFUL: true,
-    COLOR_UPDATE_SPEED: 5,
+    COLOR_UPDATE_SPEED: 2,
     PAUSED: false,
     BACK_COLOR: { r: 0, g: 0, b: 0 },
     TRANSPARENT: true,			// background looks great in black, but this way it can be anything, like dark grey.
@@ -57,11 +57,11 @@ let config = {
     SUNRAYS_RESOLUTION: 196,
     SUNRAYS_WEIGHT: 1.0,
 	WELLSPRING: true,				// should we do our splat-generation from the center?
-    WELLSPRING_UPDATE_SPEED: 3,	// how fast should the well-spring generate splats?
+    WELLSPRING_UPDATE_SPEED: 8,	// how fast should the well-spring generate splats?
 	WELLSPRING_JET_COUNT: 7,		// how many jets to implement evenly around a circle
 	WELLSPRING_JET_OFFSET: 0.1,		// how far from center each jet is
 	WELLSPRING_JET_WAGGLE: 0.5,		// how much the jet randomly waggles around its direction
-    WELLSPRING_SPLAT_FORCE: 300,		// velocity of splat moving out of the jet
+    WELLSPRING_SPLAT_FORCE: 200,		// velocity of splat moving out of the jet
 }
 
 function pointerPrototype () {
@@ -1133,6 +1133,27 @@ let lastUpdateTime = Date.now();
 let colorUpdateTimer = 0.0;
 let wellspringUpdateTimer = 0.0;
 let wellspringDirection = 0.0;
+let wellspringColorIndex = 0;
+
+// const wpengine_colors = [
+// 	colorFromHex("0ECAD4"),		// tiffany
+// 	colorFromHex("002838"),		// mirage
+// 	colorFromHex("43AB3C"),		// dollar bills
+// 	colorFromHex("50E3C2"),		// seafoam
+// 	colorFromHex("007EEA"),		// lapis
+// 	colorFromHex("7E5CEF"),		// royal
+// 	colorFromHex("FF6C29"),		// sunset
+// ];
+
+const wpengine_colors = [
+	colorFromHex("00FFFF"),
+	colorFromHex("43AB3C"),		// dollar bills
+	colorFromHex("FF6C29"),		// sunset
+	// colorFromHex("50E3C2"),		// seafoam
+	colorFromHex("007EEA"),		// lapis
+	colorFromHex("7E5CEF"),		// royal
+];
+
 update();
 
 function update () {
@@ -1178,6 +1199,7 @@ function updateColors (dt) {
         pointers.forEach(p => {
             p.color = generateColor();
         });
+		wellspringColorIndex = (wellspringColorIndex + 1) % wpengine_colors.length;
     }
 }
 
@@ -1205,7 +1227,7 @@ function wellspringSplats() {
 	const jet_angle = TWO_PI / n_jets;
 	const jet_waggle = jet_angle * config.WELLSPRING_JET_WAGGLE;
 	for ( let j = n_jets ; j-- > 0 ; ) {
-		const color = generateColor();
+		const color = generateWPEngineColor();
 		const theta = jet_angle * j + (Math.random()-0.5) * jet_waggle;		// in the right direction, but waggling
 		const dx = Math.cos(theta);
 		const dy = Math.sin(theta);
@@ -1213,6 +1235,11 @@ function wellspringSplats() {
 		const y = cy + config.WELLSPRING_JET_OFFSET * dy;
 		splat(x, y, config.WELLSPRING_SPLAT_FORCE * dx, config.WELLSPRING_SPLAT_FORCE * dy, color);
 	}
+}
+
+// Returns the current color, which is one of the WP Engine brand colors for explosions.
+function generateWPEngineColor() {
+    return wpengine_colors[wellspringColorIndex];
 }
 
 function logoOverlay() {
@@ -1691,6 +1718,16 @@ function normalizeColor (input) {
         b: input.b / 255
     };
     return output;
+}
+
+// From hex string, produce [0,1] color structure
+function colorFromHex(input) {
+	const k_saturation = 0.25 / 255.0;
+	return {
+		r: parseInt(input.substring(0,2), 16) * k_saturation,
+		g: parseInt(input.substring(2,4), 16) * k_saturation,
+		b: parseInt(input.substring(4,6), 16) * k_saturation
+	};
 }
 
 function wrap (value, min, max) {
