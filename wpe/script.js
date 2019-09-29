@@ -34,11 +34,11 @@ let config = {
     DYE_RESOLUTION: 1024,
     CAPTURE_RESOLUTION: 512,
     DENSITY_DISSIPATION: 0.3,
-    VELOCITY_DISSIPATION: 0.2,
+    VELOCITY_DISSIPATION: 0.4,
     PRESSURE: 0.2,				// 0.5
     PRESSURE_ITERATIONS: 20,
     CURL: 5,					// vorticity (10)
-    SPLAT_RADIUS: 0.2,			// 0.25
+    SPLAT_RADIUS: 0.25,			// 0.25
     SPLAT_FORCE: 6000,
     SHADING: true,
     COLORFUL: true,
@@ -57,11 +57,11 @@ let config = {
     SUNRAYS_RESOLUTION: 196,
     SUNRAYS_WEIGHT: 1.0,
 	WELLSPRING: true,				// should we do our splat-generation from the center?
-    WELLSPRING_UPDATE_SPEED: 10 ,	// how fast should the well-spring generate splats?
+    WELLSPRING_UPDATE_SPEED: 3,	// how fast should the well-spring generate splats?
 	WELLSPRING_JET_COUNT: 7,		// how many jets to implement evenly around a circle
-	WELLSPRING_JET_OFFSET: 0.1,	// how far from center each jet is
-	WELLSPRING_JET_WAGGLE: 0.3,	// how much the jet randomly waggles around its direction
-    WELLSPRING_SPLAT_FORCE: 120,		// velocity of splat moving out of the jet
+	WELLSPRING_JET_OFFSET: 0.1,		// how far from center each jet is
+	WELLSPRING_JET_WAGGLE: 0.5,		// how much the jet randomly waggles around its direction
+    WELLSPRING_SPLAT_FORCE: 300,		// velocity of splat moving out of the jet
 }
 
 function pointerPrototype () {
@@ -1221,16 +1221,64 @@ function logoOverlay() {
 	const cw = st.canvas.width  = st.canvas.clientWidth;
 	const ch = st.canvas.height = st.canvas.clientHeight;
 	st.clearRect(0, 0, cw, ch);
-	st.fillStyle = "#a00000";
+	st.fillStyle = "#000000";
 	
+	// Center box of the logo
 	const cx = cw / 2;
 	const cy = ch / 2;
 	const d_box = Math.floor(Math.min(cw, ch) / 5);
+	const d_corner = Math.round(d_box / 4);
+	const d_gap = Math.max( Math.round(d_corner / 7), 2 );
 	const c_left = Math.floor(cx - d_box/2);
 	const c_right = c_left + d_box;
 	const c_top = Math.floor(cy - d_box/2);
 	const c_bottom = c_top + d_box;
+	
+	// Main box
 	st.fillRect(c_left, c_top, c_right-c_left, c_bottom-c_top);
+	
+	// Wide dividing lines, with gradient of opacity as they get away from the main box
+	const transparentGradient = st.createRadialGradient(cx, cy, d_box/2 + d_corner*2, cx, cy, d_box*1.5);
+	transparentGradient.addColorStop(0, 'rgba(0,0,0,1)');
+	transparentGradient.addColorStop(1, 'rgba(0,0,0,0)');
+	st.fillStyle = transparentGradient;
+	st.fillRect(0, c_top-d_gap/2, cw, d_gap);
+	st.fillRect(0, c_bottom-d_gap/2, cw, d_gap);
+	st.fillRect(c_left-d_gap/2, 0, d_gap, ch);
+	st.fillRect(c_right-d_gap/2, 0, d_gap, ch);
+	st.fillStyle = "#000000";
+	
+	// Corner: Top-Left
+	st.beginPath();
+	st.moveTo(c_left, c_top);
+	st.lineTo(c_left, c_top - d_corner);
+	st.lineTo(c_left + d_corner, c_top);
+	st.fill();
+	
+	// Corner: Top-Right
+	st.beginPath();
+	st.moveTo(c_right - d_corner, c_top);
+	st.lineTo(c_right, c_top - d_corner);
+	st.lineTo(c_right + d_corner, c_top);
+	st.lineTo(c_right, c_top + d_corner);
+	st.fill();
+	
+	// Corner: Bottom-Right
+	st.beginPath();
+	st.moveTo(c_right, c_bottom - d_corner);
+	st.lineTo(c_right + d_corner, c_bottom);
+	st.lineTo(c_right, c_bottom);
+	st.lineTo(c_right, c_bottom + d_corner);
+	st.lineTo(c_right - d_corner, c_bottom);
+	st.fill();
+	
+	// Corner: Bottom-Left
+	st.beginPath();
+	st.moveTo(c_left + d_corner, c_bottom);
+	st.lineTo(c_left, c_bottom + d_corner);
+	st.lineTo(c_left - d_corner, c_bottom);
+	st.lineTo(c_left, c_bottom - d_corner);
+	st.fill();
 }
 
 function applyInputs () {
