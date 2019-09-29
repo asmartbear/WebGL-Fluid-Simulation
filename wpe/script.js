@@ -31,12 +31,12 @@ let config = {
     SIM_RESOLUTION: 128,
     DYE_RESOLUTION: 1024,
     CAPTURE_RESOLUTION: 512,
-    DENSITY_DISSIPATION: 0.9,
-    VELOCITY_DISSIPATION: 0.1,
-    PRESSURE: 0.5,
+    DENSITY_DISSIPATION: 0.3,
+    VELOCITY_DISSIPATION: 0.2,
+    PRESSURE: 0.2,				// 0.5
     PRESSURE_ITERATIONS: 20,
-    CURL: 10,					// vorticity
-    SPLAT_RADIUS: 0.25,
+    CURL: 5,					// vorticity (10)
+    SPLAT_RADIUS: 0.2,			// 0.25
     SPLAT_FORCE: 6000,
     SHADING: true,
     COLORFUL: true,
@@ -54,6 +54,12 @@ let config = {
     SUNRAYS: true,
     SUNRAYS_RESOLUTION: 196,
     SUNRAYS_WEIGHT: 1.0,
+	WELLSPRING: true,				// should we do our splat-generation from the center?
+    WELLSPRING_UPDATE_SPEED: 8 ,	// how fast should the well-spring generate splats?
+	WELLSPRING_JET_COUNT: 5,		// how many jets to implement evenly around a circle
+	WELLSPRING_JET_OFFSET: 0.1,	// how far from center each jet is
+	WELLSPRING_JET_WAGGLE: 0.3,	// how much the jet randomly waggles around its direction
+    WELLSPRING_SPLAT_FORCE: 120,		// velocity of splat moving out of the jet
 }
 
 function pointerPrototype () {
@@ -1123,6 +1129,8 @@ initFramebuffers();
 
 let lastUpdateTime = Date.now();
 let colorUpdateTimer = 0.0;
+let wellspringUpdateTimer = 0.0;
+let wellspringDirection = 0.0;
 update();
 
 function update () {
@@ -1130,9 +1138,11 @@ function update () {
     if (resizeCanvas())
         initFramebuffers();
     updateColors(dt);
+    updateWellspring(dt);
     applyInputs();
-    if (!config.PAUSED)
+    if (!config.PAUSED) {
         step(dt);
+	}
     render(null);
     requestAnimationFrame(update);
 }
@@ -1166,6 +1176,40 @@ function updateColors (dt) {
             p.color = generateColor();
         });
     }
+}
+
+function updateWellspring (dt) {
+    if (!config.WELLSPRING) return;
+
+    wellspringUpdateTimer += dt * config.WELLSPRING_UPDATE_SPEED;
+    if (wellspringUpdateTimer >= 1) {
+        wellspringUpdateTimer = wrap(wellspringUpdateTimer, 0, 1);
+	    if (!config.PAUSED) {
+			wellspringSplats();
+		}
+    }
+}
+
+// Splat all the jets from the well-spring
+function wellspringSplats() {
+	
+	// Jet center
+	const cx = 0.5;
+	const cy = 0.5;
+	const TWO_PI = Math.PI*2;
+	
+	const n_jets = config.WELLSPRING_JET_COUNT;
+	const jet_angle = TWO_PI / n_jets;
+	const jet_waggle = jet_angle * config.WELLSPRING_JET_WAGGLE;
+	for ( let j = n_jets ; j-- > 0 ; ) {
+		const color = generateColor();
+		const theta = jet_angle * j + (Math.random()-0.5) * jet_waggle;		// in the right direction, but waggling
+		const dx = Math.cos(theta);
+		const dy = Math.sin(theta);
+		const x = cx + config.WELLSPRING_JET_OFFSET * dx;
+		const y = cy + config.WELLSPRING_JET_OFFSET * dy;
+		splat(x, y, config.WELLSPRING_SPLAT_FORCE * dx, config.WELLSPRING_SPLAT_FORCE * dy, color);
+	}
 }
 
 function applyInputs () {
