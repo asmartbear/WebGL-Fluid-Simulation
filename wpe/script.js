@@ -43,7 +43,8 @@ let config = {
     COLOR_UPDATE_SPEED: 10,
     PAUSED: false,
     BACK_COLOR: { r: 0, g: 0, b: 0 },
-    TRANSPARENT: false,
+    TRANSPARENT: true,			// background looks great in black, but this way it can be anything, like dark grey.
+	CHECKERBOARD: false,		// should we draw a checkerboard background, in the case that it's transparent?
     BLOOM: false,
     BLOOM_ITERATIONS: 8,
     BLOOM_RESOLUTION: 256,
@@ -1117,7 +1118,8 @@ function updateKeywords () {
 
 updateKeywords();
 initFramebuffers();
-multipleSplats(parseInt(Math.random() * 20) + 5);
+// CHANGE: Don't start with random splats.
+//multipleSplats(parseInt(Math.random() * 20) + 5);
 
 let lastUpdateTime = Date.now();
 let colorUpdateTimer = 0.0;
@@ -1269,7 +1271,7 @@ function render (target) {
     let fbo = target == null ? null : target.fbo;
     if (!config.TRANSPARENT)
         drawColor(fbo, normalizeColor(config.BACK_COLOR));
-    if (target == null && config.TRANSPARENT)
+    if (target == null && config.TRANSPARENT && config.CHECKERBOARD)
         drawCheckerboard(fbo);
     drawDisplay(fbo, width, height);
 }
