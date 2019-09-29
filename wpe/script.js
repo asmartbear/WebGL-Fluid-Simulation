@@ -1218,6 +1218,7 @@ function wellspringSplats() {
 function logoOverlay() {
 	if ( ! st ) return;		// no stencil canvas?
 	
+	const TWO_PI = Math.PI*2;
 	const cw = st.canvas.width  = st.canvas.clientWidth;
 	const ch = st.canvas.height = st.canvas.clientHeight;
 	st.clearRect(0, 0, cw, ch);
@@ -1229,13 +1230,23 @@ function logoOverlay() {
 	const d_box = Math.floor(Math.min(cw, ch) / 5);
 	const d_corner = Math.round(d_box / 4);
 	const d_gap = Math.max( Math.round(d_corner / 7), 2 );
+	const d_center_circle = d_corner/2.3;
 	const c_left = Math.floor(cx - d_box/2);
 	const c_right = c_left + d_box;
 	const c_top = Math.floor(cy - d_box/2);
 	const c_bottom = c_top + d_box;
 	
+	// Center circle
+	st.fillStyle = "rgba(0,0,0,1)";
+	st.beginPath();
+	st.arc(cx, cy, d_center_circle, 0, TWO_PI);
+	st.fill();
+	st.fillStyle = "#000000";
+	
 	// Main box
+	st.globalCompositeOperation = "source-out";		// allow the transparent circle to stay that way
 	st.fillRect(c_left, c_top, c_right-c_left, c_bottom-c_top);
+	st.globalCompositeOperation = "source-over";
 	
 	// Wide dividing lines, with gradient of opacity as they get away from the main box
 	const transparentGradient = st.createRadialGradient(cx, cy, d_box/2 + d_corner*2, cx, cy, d_box*1.5);
