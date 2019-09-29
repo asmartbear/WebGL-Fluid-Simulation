@@ -34,26 +34,23 @@
 			.logosplosion {
                 width: 100%;
                 height: 100%;
-				position: relative;
 			}
-
-            canvas {
-                width: 100%;
-                height: 100%;
-            }
 			
-			.logo-stencil {
+			#logo-stencil {
 				position: absolute;
 				left: 0px;
 				top: 0px;
+				width: 100%;
+				height: 100%;
 				z-index: 10;
 			}
 			
-			.logo-explosion {
-				position: absolute;
-				left: 0px;
-				top: 0px;
+			#logo-explosion {
+				width: 100%;
+				height: 100%;
 			}
+			
+			/*
 
             .dg {
                 opacity: 0.9;
@@ -110,6 +107,8 @@
             .discord:before {
                 content: 'd';
             }
+			
+			*/
         </style>
         <script>
 			// We're not actually going to send events to Google, but currently the source code expects this
@@ -119,8 +118,8 @@
     </head>
     <body>
 		<div class="logosplosion">
-        	<canvas id="logo-stencil"></canvas>
         	<canvas id="logo-explosion"></canvas>
+        	<canvas id="logo-stencil"></canvas>
 		</div>
         <script src="./script.js"></script>
     </body>

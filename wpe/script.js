@@ -1225,8 +1225,12 @@ function logoOverlay() {
 	
 	const cx = cw / 2;
 	const cy = ch / 2;
-	const d = Math.min(cw, ch) / 4;
-	st.fillRect(cx - d/2, cy - d/2, d, d);
+	const d_box = Math.floor(Math.min(cw, ch) / 5);
+	const c_left = Math.floor(cx - d_box/2);
+	const c_right = c_left + d_box;
+	const c_top = Math.floor(cy - d_box/2);
+	const c_bottom = c_top + d_box;
+	st.fillRect(c_left, c_top, c_right-c_left, c_bottom-c_top);
 }
 
 function applyInputs () {
