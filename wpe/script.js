@@ -24,7 +24,9 @@ SOFTWARE.
 
 'use strict';
 
-const canvas = document.getElementsByTagName('canvas')[0];
+const canvas = document.getElementById('logo-explosion');
+const canvasStencil = document.getElementById('logo-stencil');
+const st = canvasStencil ? (canvasStencil.getContext("2d")) : null;
 resizeCanvas();
 
 let config = {
@@ -40,7 +42,7 @@ let config = {
     SPLAT_FORCE: 6000,
     SHADING: true,
     COLORFUL: true,
-    COLOR_UPDATE_SPEED: 10,
+    COLOR_UPDATE_SPEED: 5,
     PAUSED: false,
     BACK_COLOR: { r: 0, g: 0, b: 0 },
     TRANSPARENT: true,			// background looks great in black, but this way it can be anything, like dark grey.
@@ -55,8 +57,8 @@ let config = {
     SUNRAYS_RESOLUTION: 196,
     SUNRAYS_WEIGHT: 1.0,
 	WELLSPRING: true,				// should we do our splat-generation from the center?
-    WELLSPRING_UPDATE_SPEED: 8 ,	// how fast should the well-spring generate splats?
-	WELLSPRING_JET_COUNT: 5,		// how many jets to implement evenly around a circle
+    WELLSPRING_UPDATE_SPEED: 10 ,	// how fast should the well-spring generate splats?
+	WELLSPRING_JET_COUNT: 7,		// how many jets to implement evenly around a circle
 	WELLSPRING_JET_OFFSET: 0.1,	// how far from center each jet is
 	WELLSPRING_JET_WAGGLE: 0.3,	// how much the jet randomly waggles around its direction
     WELLSPRING_SPLAT_FORCE: 120,		// velocity of splat moving out of the jet
@@ -1140,6 +1142,7 @@ function update () {
     updateColors(dt);
     updateWellspring(dt);
     applyInputs();
+	logoOverlay();
     if (!config.PAUSED) {
         step(dt);
 	}
@@ -1210,6 +1213,20 @@ function wellspringSplats() {
 		const y = cy + config.WELLSPRING_JET_OFFSET * dy;
 		splat(x, y, config.WELLSPRING_SPLAT_FORCE * dx, config.WELLSPRING_SPLAT_FORCE * dy, color);
 	}
+}
+
+function logoOverlay() {
+	if ( ! st ) return;		// no stencil canvas?
+	
+	const cw = st.canvas.width  = st.canvas.clientWidth;
+	const ch = st.canvas.height = st.canvas.clientHeight;
+	st.clearRect(0, 0, cw, ch);
+	st.fillStyle = "#a00000";
+	
+	const cx = cw / 2;
+	const cy = ch / 2;
+	const d = Math.min(cw, ch) / 4;
+	st.fillRect(cx - d/2, cy - d/2, d, d);
 }
 
 function applyInputs () {

@@ -30,11 +30,30 @@
                 width: 100%;
                 height: 100%;
             }
+			
+			.logosplosion {
+                width: 100%;
+                height: 100%;
+				position: relative;
+			}
 
             canvas {
                 width: 100%;
                 height: 100%;
             }
+			
+			.logo-stencil {
+				position: absolute;
+				left: 0px;
+				top: 0px;
+				z-index: 10;
+			}
+			
+			.logo-explosion {
+				position: absolute;
+				left: 0px;
+				top: 0px;
+			}
 
             .dg {
                 opacity: 0.9;
@@ -99,7 +118,10 @@
         </script>
     </head>
     <body>
-        <canvas></canvas>
+		<div class="logosplosion">
+        	<canvas id="logo-stencil"></canvas>
+        	<canvas id="logo-explosion"></canvas>
+		</div>
         <script src="./script.js"></script>
     </body>
 </html>
