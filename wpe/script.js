@@ -57,10 +57,11 @@ let config = {
     SUNRAYS_RESOLUTION: 196,
     SUNRAYS_WEIGHT: 1.0,
 	WELLSPRING: true,				// should we do our splat-generation from the center?
-    WELLSPRING_UPDATE_SPEED: 8,	// how fast should the well-spring generate splats?
-	WELLSPRING_JET_COUNT: 7,		// how many jets to implement evenly around a circle
-	WELLSPRING_JET_OFFSET: 0.1,		// how far from center each jet is
-	WELLSPRING_JET_WAGGLE: 0.5,		// how much the jet randomly waggles around its direction
+    WELLSPRING_UPDATE_SPEED: 10,		// how fast should the well-spring generate splats?
+    WELLSPRING_JET_ROTATION: 2,		// how fast should the well-spring rotate in radians/second?
+	WELLSPRING_JET_COUNT: 5,		// how many jets to implement evenly around a circle
+	WELLSPRING_JET_OFFSET: 0.12,		// how far from center each jet is
+	WELLSPRING_JET_WAGGLE: 0.3,		// how much the jet randomly waggles around its direction
     WELLSPRING_SPLAT_FORCE: 200,		// velocity of splat moving out of the jet
 }
 
@@ -1213,6 +1214,7 @@ function updateWellspring (dt) {
 			wellspringSplats();
 		}
     }
+	wellspringDirection = wrap(wellspringDirection + config.WELLSPRING_JET_ROTATION*dt, 0, Math.PI*2);
 }
 
 // Splat all the jets from the well-spring
@@ -1227,8 +1229,8 @@ function wellspringSplats() {
 	const jet_angle = TWO_PI / n_jets;
 	const jet_waggle = jet_angle * config.WELLSPRING_JET_WAGGLE;
 	for ( let j = n_jets ; j-- > 0 ; ) {
-		const color = generateWPEngineColor();
-		const theta = jet_angle * j + (Math.random()-0.5) * jet_waggle;		// in the right direction, but waggling
+		const color = wpengine_colors[ (wellspringColorIndex + j*2) % wpengine_colors.length];
+		const theta = wellspringDirection + jet_angle * j + (Math.random()-0.5) * jet_waggle;		// in the right direction, but waggling
 		const dx = Math.cos(theta);
 		const dy = Math.sin(theta);
 		const x = cx + config.WELLSPRING_JET_OFFSET * dx;
