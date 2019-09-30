@@ -33,12 +33,12 @@ let config = {
     SIM_RESOLUTION: 128,
     DYE_RESOLUTION: 1024,
     CAPTURE_RESOLUTION: 512,
-    DENSITY_DISSIPATION: 0.3,
-    VELOCITY_DISSIPATION: 0.4,
-    PRESSURE: 0.2,				// 0.5
+    DENSITY_DISSIPATION: 1.6,		// 1.2
+    VELOCITY_DISSIPATION: 0.2,		// 0.3
+    PRESSURE: 0.2,				// 0.2
     PRESSURE_ITERATIONS: 20,
-    CURL: 30,					// vorticity (10)
-    SPLAT_RADIUS: 0.25,			// 0.25
+    CURL: 10,					// 20
+    SPLAT_RADIUS: 0.5,			// 0.3
     SPLAT_FORCE: 6000,
     SHADING: true,
     COLORFUL: true,
@@ -47,7 +47,7 @@ let config = {
     BACK_COLOR: { r: 0, g: 0, b: 0 },
     TRANSPARENT: true,			// background looks great in black, but this way it can be anything, like dark grey.
 	CHECKERBOARD: false,		// should we draw a checkerboard background, in the case that it's transparent?
-    BLOOM: false,
+    BLOOM: true,
     BLOOM_ITERATIONS: 8,
     BLOOM_RESOLUTION: 256,
     BLOOM_INTENSITY: 0.8,
@@ -57,12 +57,14 @@ let config = {
     SUNRAYS_RESOLUTION: 196,
     SUNRAYS_WEIGHT: 1.0,
 	WELLSPRING: true,				// should we do our splat-generation from the center?
-    WELLSPRING_UPDATE_SPEED: 10,		// how fast should the well-spring generate splats?
+    WELLSPRING_UPDATE_SPEED: 25,		// how fast should the well-spring generate splats?
     WELLSPRING_JET_ROTATION: 2,		// how fast should the well-spring rotate in radians/second?
-	WELLSPRING_JET_COUNT: 5,		// how many jets to implement evenly around a circle
-	WELLSPRING_JET_OFFSET: 0.12,		// how far from center each jet is
-	WELLSPRING_JET_WAGGLE: 0.3,		// how much the jet randomly waggles around its direction
-    WELLSPRING_SPLAT_FORCE: 200,		// velocity of splat moving out of the jet
+	WELLSPRING_JET_COUNT: 4,		// how many jets to implement evenly around a circle
+	WELLSPRING_JET_OFFSET: 0.1,		// how far from center each jet is
+	WELLSPRING_JET_WAGGLE: 0.1,		// how much the jet randomly waggles around its direction
+    WELLSPRING_SPLAT_FORCE: 500,		// velocity of splat moving out of the jet
+	WELLSPRING_SATURATION: 0.5,		// how saturated to make the colors coming out of the jets
+	TIME_DILATION: 1.0,				// time is multiplied by this for actuals
 }
 
 function pointerPrototype () {
@@ -1200,7 +1202,6 @@ function updateColors (dt) {
         pointers.forEach(p => {
             p.color = generateColor();
         });
-		wellspringColorIndex = (wellspringColorIndex + 1) % wpengine_colors.length;
     }
 }
 
@@ -1211,6 +1212,7 @@ function updateWellspring (dt) {
     if (wellspringUpdateTimer >= 1) {
         wellspringUpdateTimer = wrap(wellspringUpdateTimer, 0, 1);
 	    if (!config.PAUSED) {
+			wellspringColorIndex = (wellspringColorIndex + 1) % wpengine_colors.length;
 			wellspringSplats();
 		}
     }
@@ -1228,8 +1230,10 @@ function wellspringSplats() {
 	const n_jets = config.WELLSPRING_JET_COUNT;
 	const jet_angle = TWO_PI / n_jets;
 	const jet_waggle = jet_angle * config.WELLSPRING_JET_WAGGLE;
-	for ( let j = n_jets ; j-- > 0 ; ) {
-		const color = wpengine_colors[ (wellspringColorIndex + j*2) % wpengine_colors.length];
+	let j = Math.floor(Math.random() * n_jets);
+	/*for ( let j = n_jets ; j-- > 0 ; )*/ {
+		// const color = wpengine_colors[ (wellspringColorIndex + j*2) % wpengine_colors.length];
+		const color = generateWPEngineColor();
 		const theta = wellspringDirection + jet_angle * j + (Math.random()-0.5) * jet_waggle;		// in the right direction, but waggling
 		const dx = Math.cos(theta);
 		const dy = Math.sin(theta);
@@ -1334,6 +1338,7 @@ function applyInputs () {
 }
 
 function step (dt) {
+	dt *= config.TIME_DILATION;
     gl.disable(gl.BLEND);
     gl.viewport(0, 0, velocity.width, velocity.height);
 
@@ -1724,7 +1729,7 @@ function normalizeColor (input) {
 
 // From hex string, produce [0,1] color structure
 function colorFromHex(input) {
-	const k_saturation = 0.25 / 255.0;
+	const k_saturation = config.WELLSPRING_SATURATION / 255.0;
 	return {
 		r: parseInt(input.substring(0,2), 16) * k_saturation,
 		g: parseInt(input.substring(2,4), 16) * k_saturation,
