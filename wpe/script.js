@@ -64,8 +64,20 @@ let config = {
 	WELLSPRING_JET_WAGGLE: 0.1,		// how much the jet randomly waggles around its direction
     WELLSPRING_SPLAT_FORCE: 500,		// velocity of splat moving out of the jet
 	WELLSPRING_SATURATION: 0.5,		// how saturated to make the colors coming out of the jets
-	TIME_DILATION: 1.0,				// time is multiplied by this for actuals
+	TIME_DILATION: 0.1,				// time is multiplied by this for actuals
 }
+
+// Apply time dilation to other parameters
+const muted_time_dilation = Math.sqrt(config.TIME_DILATION);
+const muted_time_dilation2 = Math.sqrt(muted_time_dilation);
+config.WELLSPRING_UPDATE_SPEED *= config.TIME_DILATION;
+// config.WELLSPRING_JET_ROTATION *= config.TIME_DILATION;
+config.WELLSPRING_SPLAT_FORCE /= muted_time_dilation2;
+config.PRESSURE *= muted_time_dilation;
+config.DENSITY_DISSIPATION *= muted_time_dilation;
+config.VELOCITY_DISSIPATION *= muted_time_dilation;
+config.BLOOM_INTENSITY *= muted_time_dilation2;
+
 
 function pointerPrototype () {
     this.id = -1;
@@ -478,6 +490,7 @@ const blurShader = compileShader(gl.FRAGMENT_SHADER, `
         gl_FragColor = sum;
     }
 `);
+// 0.35294117 = 6/17
 
 const copyShader = compileShader(gl.FRAGMENT_SHADER, `
     precision mediump float;
@@ -1200,7 +1213,7 @@ function updateColors (dt) {
     if (colorUpdateTimer >= 1) {
         colorUpdateTimer = wrap(colorUpdateTimer, 0, 1);
         pointers.forEach(p => {
-            p.color = generateColor();
+            p.color = generateWPEngineColor(); // generateColor();
         });
     }
 }
@@ -1281,7 +1294,7 @@ function logoOverlay() {
 	st.fillRect(c_left, c_top, c_right-c_left, c_bottom-c_top);
 	st.globalCompositeOperation = "source-over";
 	
-	// Wide dividing lines, with gradient of opacity as they get away from the main box
+	// Long dividing lines, with gradient of opacity as they get away from the main box
 	const transparentGradient = st.createRadialGradient(cx, cy, d_box/2 + d_corner*2, cx, cy, d_box*1.5);
 	transparentGradient.addColorStop(0, 'rgba(0,0,0,1)');
 	transparentGradient.addColorStop(1, 'rgba(0,0,0,0)');
