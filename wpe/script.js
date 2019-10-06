@@ -38,7 +38,7 @@ let config = {
     PRESSURE: 0.4,				// 0.2
     PRESSURE_ITERATIONS: 20,		// 20
     CURL: 10,					// 20
-    SPLAT_RADIUS: 1.0,			// 0.3
+    SPLAT_RADIUS: 0.5,			// 0.3
     SPLAT_FORCE: 6000,
     SHADING: true,
     COLORFUL: true,
@@ -57,15 +57,16 @@ let config = {
     SUNRAYS_RESOLUTION: 196,
     SUNRAYS_WEIGHT: 1.0,			// 1.0
 	WELLSPRING: true,				// should we do our splat-generation from the center?
-    WELLSPRING_UPDATE_SPEED: 4,		// how fast should the well-spring generate splats?
+    WELLSPRING_UPDATE_SPEED: 0.5,		// how fast should the well-spring generate splats?
     WELLSPRING_JET_ROTATION: 3,		// how fast should the well-spring rotate in radians/second?
-	WELLSPRING_JET_COUNT: 3,		// how many jets to implement evenly around a circle
-	WELLSPRING_JET_OFFSET: 0.13,		// how far from center each jet is
-	WELLSPRING_JET_WAGGLE: 0.3,		// how much the jet randomly waggles around its direction
-    WELLSPRING_SPLAT_FORCE: 600,		// velocity of splat moving out of the jet
+	WELLSPRING_JET_COUNT: 9,		// how many jets to implement evenly around a circle
+	WELLSPRING_JET_OFFSET: 0.05,		// how far from center each jet is  (0.13)
+	WELLSPRING_JET_STUTTER: 0.04,		// how far apart each splat it along one direction
+	WELLSPRING_JET_WAGGLE: 0.1,		// how much the jet randomly waggles around its direction
+    WELLSPRING_SPLAT_FORCE: 1500,		// velocity of splat moving out of the jet
 	WELLSPRING_SATURATION: 0.5,		// how saturated to make the colors coming out of the jets    (0.5)
-	WELLSPRING_N_SPLATS: 3,			// number of splats per iteration
-	TIME_DILATION: 0.05,				// time is multiplied by this for actuals
+	WELLSPRING_N_SPLATS: 12,			// number of splats per iteration
+	TIME_DILATION: 0.01,				// time is multiplied by this for actuals
 }
 
 // config.WELLSPRING_JET_ROTATION = (Math.PI*2 / config.WELLSPRING_JET_COUNT / 2.0) * (config.WELLSPRING_UPDATE_SPEED * 1.1);
@@ -1223,7 +1224,7 @@ function updateWellspring (dt) {
     if (!config.WELLSPRING) return;
 
 	if ( wellspringUpdateThreshold < 0 ) {
-		wellspringUpdateThreshold = Math.random() / 3 + (5.0/6.0);
+		wellspringUpdateThreshold = Math.random() / 2 + 0.75;
 	}
 
     wellspringUpdateTimer += dt * config.WELLSPRING_UPDATE_SPEED;
@@ -1244,7 +1245,7 @@ function wellspringSplatJet( j ) {
 	// Jet center
 	const cx = 0.5;
 	const cy = 0.5;
-	const TWO_PI = Math.PI*2;
+    const TWO_PI = Math.PI*2;
 	
 	const n_jets = config.WELLSPRING_JET_COUNT;
 	const jet_angle = TWO_PI / n_jets;
@@ -1255,8 +1256,9 @@ function wellspringSplatJet( j ) {
         const theta = wellspringDirection + jet_angle * j + (Math.random()-0.5) * jet_waggle;		// in the right direction, but waggling
         const dx = Math.cos(theta);
         const dy = Math.sin(theta);
-        const x = cx + config.WELLSPRING_JET_OFFSET * dx;
-        const y = cy + config.WELLSPRING_JET_OFFSET * dy;
+        const offset_distance = (config.WELLSPRING_JET_STUTTER*splts + config.WELLSPRING_JET_OFFSET);
+        const x = cx + offset_distance * dx;
+        const y = cy + offset_distance * dy;
         splat(x, y, config.WELLSPRING_SPLAT_FORCE * dx, config.WELLSPRING_SPLAT_FORCE * dy, color);
     }
 }
