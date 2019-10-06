@@ -33,12 +33,12 @@ let config = {
     SIM_RESOLUTION: 128,
     DYE_RESOLUTION: 1024,
     CAPTURE_RESOLUTION: 512,
-    DENSITY_DISSIPATION: 1.6,		// 1.2
-    VELOCITY_DISSIPATION: 0.2,		// 0.3
-    PRESSURE: 0.2,				// 0.2
-    PRESSURE_ITERATIONS: 20,
+    DENSITY_DISSIPATION: 3,		// 1.2
+    VELOCITY_DISSIPATION: 3,		// 0.3
+    PRESSURE: 0.4,				// 0.2
+    PRESSURE_ITERATIONS: 20,		// 20
     CURL: 10,					// 20
-    SPLAT_RADIUS: 0.5,			// 0.3
+    SPLAT_RADIUS: 1.0,			// 0.3
     SPLAT_FORCE: 6000,
     SHADING: true,
     COLORFUL: true,
@@ -47,37 +47,53 @@ let config = {
     BACK_COLOR: { r: 0, g: 0, b: 0 },
     TRANSPARENT: true,			// background looks great in black, but this way it can be anything, like dark grey.
 	CHECKERBOARD: false,		// should we draw a checkerboard background, in the case that it's transparent?
-    BLOOM: true,
+    BLOOM: false,
     BLOOM_ITERATIONS: 8,
     BLOOM_RESOLUTION: 256,
     BLOOM_INTENSITY: 0.8,
     BLOOM_THRESHOLD: 0.6,
     BLOOM_SOFT_KNEE: 0.7,
-    SUNRAYS: true,
+    SUNRAYS: false,
     SUNRAYS_RESOLUTION: 196,
-    SUNRAYS_WEIGHT: 1.0,
+    SUNRAYS_WEIGHT: 1.0,			// 1.0
 	WELLSPRING: true,				// should we do our splat-generation from the center?
-    WELLSPRING_UPDATE_SPEED: 25,		// how fast should the well-spring generate splats?
-    WELLSPRING_JET_ROTATION: 2,		// how fast should the well-spring rotate in radians/second?
-	WELLSPRING_JET_COUNT: 4,		// how many jets to implement evenly around a circle
-	WELLSPRING_JET_OFFSET: 0.1,		// how far from center each jet is
-	WELLSPRING_JET_WAGGLE: 0.1,		// how much the jet randomly waggles around its direction
-    WELLSPRING_SPLAT_FORCE: 500,		// velocity of splat moving out of the jet
-	WELLSPRING_SATURATION: 0.5,		// how saturated to make the colors coming out of the jets
-	TIME_DILATION: 0.1,				// time is multiplied by this for actuals
+    WELLSPRING_UPDATE_SPEED: 4,		// how fast should the well-spring generate splats?
+    WELLSPRING_JET_ROTATION: 3,		// how fast should the well-spring rotate in radians/second?
+	WELLSPRING_JET_COUNT: 3,		// how many jets to implement evenly around a circle
+	WELLSPRING_JET_OFFSET: 0.13,		// how far from center each jet is
+	WELLSPRING_JET_WAGGLE: 0.3,		// how much the jet randomly waggles around its direction
+    WELLSPRING_SPLAT_FORCE: 600,		// velocity of splat moving out of the jet
+	WELLSPRING_SATURATION: 0.5,		// how saturated to make the colors coming out of the jets    (0.5)
+	WELLSPRING_N_SPLATS: 3,			// number of splats per iteration
+	TIME_DILATION: 0.05,				// time is multiplied by this for actuals
 }
+
+// config.WELLSPRING_JET_ROTATION = (Math.PI*2 / config.WELLSPRING_JET_COUNT / 2.0) * (config.WELLSPRING_UPDATE_SPEED * 1.1);
 
 // Apply time dilation to other parameters
 const muted_time_dilation = Math.sqrt(config.TIME_DILATION);
 const muted_time_dilation2 = Math.sqrt(muted_time_dilation);
-config.WELLSPRING_UPDATE_SPEED *= config.TIME_DILATION;
-// config.WELLSPRING_JET_ROTATION *= config.TIME_DILATION;
-config.WELLSPRING_SPLAT_FORCE /= muted_time_dilation2;
-config.PRESSURE *= muted_time_dilation;
-config.DENSITY_DISSIPATION *= muted_time_dilation;
-config.VELOCITY_DISSIPATION *= muted_time_dilation;
-config.BLOOM_INTENSITY *= muted_time_dilation2;
+// config.WELLSPRING_JET_ROTATION *= muted_time_dilation2;
 
+
+// const wpengine_colors = [
+// 	colorFromHex("0ECAD4"),		// tiffany
+// 	colorFromHex("002838"),		// mirage
+// 	colorFromHex("43AB3C"),		// dollar bills
+// 	colorFromHex("50E3C2"),		// seafoam
+// 	colorFromHex("007EEA"),		// lapis
+// 	colorFromHex("7E5CEF"),		// royal
+// 	colorFromHex("FF6C29"),		// sunset
+// ];
+
+const wpengine_colors = [
+	colorFromHex("00FFFF"),
+	colorFromHex("43AB3C"),		// dollar bills
+	colorFromHex("FF6C29"),		// sunset
+	// colorFromHex("50E3C2"),		// seafoam
+	colorFromHex("007EEA"),		// lapis
+	colorFromHex("7E5CEF"),		// royal
+];
 
 function pointerPrototype () {
     this.id = -1;
@@ -90,7 +106,7 @@ function pointerPrototype () {
     this.down = false;
     this.moved = false;
     this.color = [30, 0, 300];
-}
+};
 
 let pointers = [];
 let splatStack = [];
@@ -1151,24 +1167,9 @@ let wellspringUpdateTimer = 0.0;
 let wellspringDirection = 0.0;
 let wellspringColorIndex = 0;
 
-// const wpengine_colors = [
-// 	colorFromHex("0ECAD4"),		// tiffany
-// 	colorFromHex("002838"),		// mirage
-// 	colorFromHex("43AB3C"),		// dollar bills
-// 	colorFromHex("50E3C2"),		// seafoam
-// 	colorFromHex("007EEA"),		// lapis
-// 	colorFromHex("7E5CEF"),		// royal
-// 	colorFromHex("FF6C29"),		// sunset
-// ];
+let wellspringUpdateThreshold = -1;		// default
 
-const wpengine_colors = [
-	colorFromHex("00FFFF"),
-	colorFromHex("43AB3C"),		// dollar bills
-	colorFromHex("FF6C29"),		// sunset
-	// colorFromHex("50E3C2"),		// seafoam
-	colorFromHex("007EEA"),		// lapis
-	colorFromHex("7E5CEF"),		// royal
-];
+wellspringSplatAllJets();       // start with splatting all of our jets
 
 update();
 
@@ -1221,19 +1222,24 @@ function updateColors (dt) {
 function updateWellspring (dt) {
     if (!config.WELLSPRING) return;
 
+	if ( wellspringUpdateThreshold < 0 ) {
+		wellspringUpdateThreshold = Math.random() / 3 + (5.0/6.0);
+	}
+
     wellspringUpdateTimer += dt * config.WELLSPRING_UPDATE_SPEED;
-    if (wellspringUpdateTimer >= 1) {
-        wellspringUpdateTimer = wrap(wellspringUpdateTimer, 0, 1);
+    if (wellspringUpdateTimer >= wellspringUpdateThreshold) {
+        wellspringUpdateTimer = 0;// wrap(wellspringUpdateTimer, 0, 1);
 	    if (!config.PAUSED) {
 			wellspringColorIndex = (wellspringColorIndex + 1) % wpengine_colors.length;
-			wellspringSplats();
+			wellspringSplatJet( Math.floor(Math.random() * config.WELLSPRING_JET_COUNT) );
 		}
+		wellspringUpdateThreshold = -1;		// recompute
     }
 	wellspringDirection = wrap(wellspringDirection + config.WELLSPRING_JET_ROTATION*dt, 0, Math.PI*2);
 }
 
-// Splat all the jets from the well-spring
-function wellspringSplats() {
+// Splat one jet from the well-spring, naming the one
+function wellspringSplatJet( j ) {
 	
 	// Jet center
 	const cx = 0.5;
@@ -1243,16 +1249,22 @@ function wellspringSplats() {
 	const n_jets = config.WELLSPRING_JET_COUNT;
 	const jet_angle = TWO_PI / n_jets;
 	const jet_waggle = jet_angle * config.WELLSPRING_JET_WAGGLE;
-	let j = Math.floor(Math.random() * n_jets);
-	/*for ( let j = n_jets ; j-- > 0 ; )*/ {
-		// const color = wpengine_colors[ (wellspringColorIndex + j*2) % wpengine_colors.length];
-		const color = generateWPEngineColor();
-		const theta = wellspringDirection + jet_angle * j + (Math.random()-0.5) * jet_waggle;		// in the right direction, but waggling
-		const dx = Math.cos(theta);
-		const dy = Math.sin(theta);
-		const x = cx + config.WELLSPRING_JET_OFFSET * dx;
-		const y = cy + config.WELLSPRING_JET_OFFSET * dy;
-		splat(x, y, config.WELLSPRING_SPLAT_FORCE * dx, config.WELLSPRING_SPLAT_FORCE * dy, color);
+	const color = wpengine_colors[ (wellspringColorIndex + j) % wpengine_colors.length ];
+
+    for ( let splts = config.WELLSPRING_N_SPLATS ; splts-- > 0 ; ) {
+        const theta = wellspringDirection + jet_angle * j + (Math.random()-0.5) * jet_waggle;		// in the right direction, but waggling
+        const dx = Math.cos(theta);
+        const dy = Math.sin(theta);
+        const x = cx + config.WELLSPRING_JET_OFFSET * dx;
+        const y = cy + config.WELLSPRING_JET_OFFSET * dy;
+        splat(x, y, config.WELLSPRING_SPLAT_FORCE * dx, config.WELLSPRING_SPLAT_FORCE * dy, color);
+    }
+}
+
+// Splat all the jets from the well-spring
+function wellspringSplatAllJets() {
+	for ( let j = config.WELLSPRING_JET_COUNT ; j-- > 0 ; ) {
+        wellspringSplatJet(j);
 	}
 }
 
