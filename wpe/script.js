@@ -148,6 +148,11 @@ let total_time = 0;
 let time_last_jet = 0;
 function updateWellspring(dt) {
 
+    // Check for paused
+    if ( config.PAUSED ) {
+        return;
+    }
+
     // Update for this step
     total_time += dt;
 
