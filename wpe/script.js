@@ -55,7 +55,9 @@ let config = {
     SUNRAYS: true,
     SUNRAYS_RESOLUTION: 196,
     SUNRAYS_WEIGHT: 0.7,			// 1.0
-	WELLSPRING: true,				// should we do our splat-generation from the center?
+    WELLSPRING: true,				// should we do our splat-generation from the center?
+    WELLSPRING_CX: 0.7,             // location of the logo
+    WELLSPRING_CY: 0.7,             // location of the logo
     WELLSPRING_SECS_BETWEEN_SHOTS: 1.0,		// how fast should the well-spring generate jets
     WELLSPRING_SECS_BETWEEN_SHOOT_STEPS: 0.035,     // time between each step of a single shot
 	WELLSPRING_JET_COUNT: 7,		// how many jets to implement evenly around a circle
@@ -68,6 +70,9 @@ let config = {
 	WELLSPRING_N_SPLATS_Y: 10,			// number of splats per iteration in each direction
 	TIME_DILATION: 0.01,				// time is multiplied by this for actuals
 }
+
+// Jet variables
+const TWO_PI = Math.PI*2;
 
 // Called initially and whenever the canvas resizes.
 // Width and height are in pixels inside the canvas, which might be mapped inside a single device pixel.
@@ -113,11 +118,6 @@ function getNextColorIdx() {
     return r;
 }
 
-// Jet variables
-const cx = 0.5;
-const cy = 0.5;
-const TWO_PI = Math.PI*2;
-
 // Initialize Jets
 const n_jets = config.WELLSPRING_JET_COUNT;
 const jet_angle = TWO_PI / n_jets;
@@ -140,8 +140,8 @@ function stepJets() {
             const dx = Math.cos(theta);
             const dy = Math.sin(theta);
             const offset_distance = config.WELLSPRING_JET_STUTTER*jets[j].shoot_idx + config.WELLSPRING_JET_OFFSET;
-            const x = cx + offset_distance * dx;
-            const y = cy + offset_distance * dy;
+            const x = config.WELLSPRING_CX + offset_distance * dx;
+            const y = config.WELLSPRING_CY + offset_distance * dy;
             splat(x, y, config.WELLSPRING_SPLAT_FORCE * dx, config.WELLSPRING_SPLAT_FORCE * dy, wpengine_colors[jets[j].color_idx]);
 
             // Update step; finished shooting?
@@ -1327,14 +1327,14 @@ function logoOverlay() {
 	if ( ! st ) return;		// no stencil canvas?
 	
 	const TWO_PI = Math.PI*2;
-	const cw = st.canvas.width  = st.canvas.clientWidth;
-	const ch = st.canvas.height = st.canvas.clientHeight;
+	const cw = st.canvas.width = st.canvas.clientWidth;
+    const ch = st.canvas.height = st.canvas.clientHeight;
+    const cx = config.WELLSPRING_CX * cw;
+    const cy = (1.0-config.WELLSPRING_CY) * ch;     // convert Y axis to left-handed
 	st.clearRect(0, 0, cw, ch);
 	st.fillStyle = "#000000";
 	
 	// Center box of the logo
-	const cx = cw / 2;
-	const cy = ch / 2;
 	const d_box = Math.floor(Math.min(cw, ch) / 5);
 	const d_corner = Math.round(d_box / 4);
 	const d_gap = Math.max( Math.round(d_corner / 7), 2 );
