@@ -38,7 +38,7 @@ let config = {
     PRESSURE: 0.4,				// 0.2
     PRESSURE_ITERATIONS: 20,		// 20
     CURL: 10,					// 20
-    SPLAT_RADIUS: 0.5,			// 0.3
+    SPLAT_RADIUS: 0.3,			// 0.3
     SPLAT_FORCE: 6000,
     SHADING: true,
     COLORFUL: true,
@@ -55,26 +55,18 @@ let config = {
     BLOOM_SOFT_KNEE: 0.7,
     SUNRAYS: false,
     SUNRAYS_RESOLUTION: 196,
-    SUNRAYS_WEIGHT: 1.0,			// 1.0
+    SUNRAYS_WEIGHT: 0.7,			// 1.0
 	WELLSPRING: true,				// should we do our splat-generation from the center?
-    WELLSPRING_UPDATE_SPEED: 0.5,		// how fast should the well-spring generate splats?
-    WELLSPRING_JET_ROTATION: 3,		// how fast should the well-spring rotate in radians/second?
-	WELLSPRING_JET_COUNT: 9,		// how many jets to implement evenly around a circle
+    WELLSPRING_SECS_BETWEEN_SHOTS: 1,		// how fast should the well-spring generate jets
+	WELLSPRING_JET_COUNT: 7,		// how many jets to implement evenly around a circle
 	WELLSPRING_JET_OFFSET: 0.05,		// how far from center each jet is  (0.13)
-	WELLSPRING_JET_STUTTER: 0.04,		// how far apart each splat it along one direction
-	WELLSPRING_JET_WAGGLE: 0.1,		// how much the jet randomly waggles around its direction
-    WELLSPRING_SPLAT_FORCE: 1500,		// velocity of splat moving out of the jet
+	WELLSPRING_JET_STUTTER: 0.025,		// how far apart each splat it along one direction
+	WELLSPRING_JET_WAGGLE: 0.3,		// how much the jet randomly waggles around its direction
+    WELLSPRING_SPLAT_FORCE: 800,		// velocity of splat moving out of the jet
 	WELLSPRING_SATURATION: 0.5,		// how saturated to make the colors coming out of the jets    (0.5)
-	WELLSPRING_N_SPLATS: 12,			// number of splats per iteration
+	WELLSPRING_N_SPLATS: 20,			// number of splats per iteration
 	TIME_DILATION: 0.01,				// time is multiplied by this for actuals
 }
-
-// config.WELLSPRING_JET_ROTATION = (Math.PI*2 / config.WELLSPRING_JET_COUNT / 2.0) * (config.WELLSPRING_UPDATE_SPEED * 1.1);
-
-// Apply time dilation to other parameters
-const muted_time_dilation = Math.sqrt(config.TIME_DILATION);
-const muted_time_dilation2 = Math.sqrt(muted_time_dilation);
-// config.WELLSPRING_JET_ROTATION *= muted_time_dilation2;
 
 
 // const wpengine_colors = [
@@ -95,6 +87,98 @@ const wpengine_colors = [
 	colorFromHex("007EEA"),		// lapis
 	colorFromHex("7E5CEF"),		// royal
 ];
+const n_colors = wpengine_colors.length;
+let jet_color_idx = 0;
+
+function getNextColorIdx() {
+    const r = jet_color_idx;
+    jet_color_idx = (++jet_color_idx) % n_colors;
+    return r;
+}
+
+// Jet variables
+const cx = 0.5;
+const cy = 0.5;
+const TWO_PI = Math.PI*2;
+
+// Initialize Jets
+const n_jets = config.WELLSPRING_JET_COUNT;
+const jet_angle = TWO_PI / n_jets;
+const jets = new Array( n_jets );
+for ( let j = n_jets ; j-- > 0 ; ) {
+    jets[j] = {
+        theta: jet_angle * j,         // what direction this jet is currently pointing
+        shoot_idx: 0,                      // which shooting step are we on, or -1 if we're not shooting right now
+        color_idx: getNextColorIdx(),       // index into the wpengine_colors array; initialize with something that spaces out the colors
+    };
+}
+
+// Take a step of jets being shot
+function stepJets() {
+    for ( let j = n_jets ; j-- > 0 ; ) {
+
+        // Handle in the process of shooting
+        if ( jets[j].shoot_idx >= 0 ) {
+            const theta = jets[j].theta + (Math.random()-0.5) * config.WELLSPRING_JET_WAGGLE;
+            const dx = Math.cos(theta);
+            const dy = Math.sin(theta);
+            const offset_distance = config.WELLSPRING_JET_STUTTER*jets[j].shoot_idx + config.WELLSPRING_JET_OFFSET;
+            const x = cx + offset_distance * dx;
+            const y = cy + offset_distance * dy;
+            splat(x, y, config.WELLSPRING_SPLAT_FORCE * dx, config.WELLSPRING_SPLAT_FORCE * dy, wpengine_colors[jets[j].color_idx]);
+
+            // Update step; finished shooting?
+            if ( ++jets[j].shoot_idx >= config.WELLSPRING_N_SPLATS ) {
+                jets[j].shoot_idx = -1;
+            }
+        }
+    }
+}
+
+// Fire off a given jet
+function shootJet(j) {
+    jets[j].color_idx = getNextColorIdx();     // advance to the next color
+    jets[j].theta += jet_angle / 3;     // advance the position of the jet a bit
+    jets[j].shoot_idx = 0;          // start the jet
+}
+
+// Called every render-step, with the floating-point seconds since the last render-step
+let step_counter = 0;
+let total_time = 0;
+let time_last_jet = 0;
+function updateWellspring(dt) {
+
+    // Update for this step
+    total_time += dt;
+
+    // Shoot a jet?
+    if ( total_time - time_last_jet > config.WELLSPRING_SECS_BETWEEN_SHOTS ) {
+        time_last_jet = total_time;
+        const j = Math.floor(Math.random() * n_jets);
+        shootJet(j);
+    }
+
+    // Take steps
+    if ( step_counter % 2 == 0 ) {
+        stepJets();
+    }
+    ++step_counter;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 function pointerPrototype () {
     this.id = -1;
@@ -1164,13 +1248,6 @@ initFramebuffers();
 
 let lastUpdateTime = Date.now();
 let colorUpdateTimer = 0.0;
-let wellspringUpdateTimer = 0.0;
-let wellspringDirection = 0.0;
-let wellspringColorIndex = 0;
-
-let wellspringUpdateThreshold = -1;		// default
-
-wellspringSplatAllJets();       // start with splatting all of our jets
 
 update();
 
@@ -1215,64 +1292,9 @@ function updateColors (dt) {
     if (colorUpdateTimer >= 1) {
         colorUpdateTimer = wrap(colorUpdateTimer, 0, 1);
         pointers.forEach(p => {
-            p.color = generateWPEngineColor(); // generateColor();
+            p.color = generateColor();
         });
     }
-}
-
-function updateWellspring (dt) {
-    if (!config.WELLSPRING) return;
-
-	if ( wellspringUpdateThreshold < 0 ) {
-		wellspringUpdateThreshold = Math.random() / 2 + 0.75;
-	}
-
-    wellspringUpdateTimer += dt * config.WELLSPRING_UPDATE_SPEED;
-    if (wellspringUpdateTimer >= wellspringUpdateThreshold) {
-        wellspringUpdateTimer = 0;// wrap(wellspringUpdateTimer, 0, 1);
-	    if (!config.PAUSED) {
-			wellspringColorIndex = (wellspringColorIndex + 1) % wpengine_colors.length;
-			wellspringSplatJet( Math.floor(Math.random() * config.WELLSPRING_JET_COUNT) );
-		}
-		wellspringUpdateThreshold = -1;		// recompute
-    }
-	wellspringDirection = wrap(wellspringDirection + config.WELLSPRING_JET_ROTATION*dt, 0, Math.PI*2);
-}
-
-// Splat one jet from the well-spring, naming the one
-function wellspringSplatJet( j ) {
-	
-	// Jet center
-	const cx = 0.5;
-	const cy = 0.5;
-    const TWO_PI = Math.PI*2;
-	
-	const n_jets = config.WELLSPRING_JET_COUNT;
-	const jet_angle = TWO_PI / n_jets;
-	const jet_waggle = jet_angle * config.WELLSPRING_JET_WAGGLE;
-	const color = wpengine_colors[ (wellspringColorIndex + j) % wpengine_colors.length ];
-
-    for ( let splts = config.WELLSPRING_N_SPLATS ; splts-- > 0 ; ) {
-        const theta = wellspringDirection + jet_angle * j + (Math.random()-0.5) * jet_waggle;		// in the right direction, but waggling
-        const dx = Math.cos(theta);
-        const dy = Math.sin(theta);
-        const offset_distance = (config.WELLSPRING_JET_STUTTER*splts + config.WELLSPRING_JET_OFFSET);
-        const x = cx + offset_distance * dx;
-        const y = cy + offset_distance * dy;
-        splat(x, y, config.WELLSPRING_SPLAT_FORCE * dx, config.WELLSPRING_SPLAT_FORCE * dy, color);
-    }
-}
-
-// Splat all the jets from the well-spring
-function wellspringSplatAllJets() {
-	for ( let j = config.WELLSPRING_JET_COUNT ; j-- > 0 ; ) {
-        wellspringSplatJet(j);
-	}
-}
-
-// Returns the current color, which is one of the WP Engine brand colors for explosions.
-function generateWPEngineColor() {
-    return wpengine_colors[wellspringColorIndex];
 }
 
 function logoOverlay() {
