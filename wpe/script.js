@@ -27,7 +27,6 @@ SOFTWARE.
 const canvas = document.getElementById('logo-explosion');
 const canvasStencil = document.getElementById('logo-stencil');
 const st = canvasStencil ? (canvasStencil.getContext("2d")) : null;
-resizeCanvas();
 
 let config = {
     SIM_RESOLUTION: 128,
@@ -53,21 +52,39 @@ let config = {
     BLOOM_INTENSITY: 0.8,
     BLOOM_THRESHOLD: 0.6,
     BLOOM_SOFT_KNEE: 0.7,
-    SUNRAYS: false,
+    SUNRAYS: true,
     SUNRAYS_RESOLUTION: 196,
     SUNRAYS_WEIGHT: 0.7,			// 1.0
 	WELLSPRING: true,				// should we do our splat-generation from the center?
-    WELLSPRING_SECS_BETWEEN_SHOTS: 1,		// how fast should the well-spring generate jets
+    WELLSPRING_SECS_BETWEEN_SHOTS: 1.0,		// how fast should the well-spring generate jets
+    WELLSPRING_SECS_BETWEEN_SHOOT_STEPS: 0.035,     // time between each step of a single shot
 	WELLSPRING_JET_COUNT: 7,		// how many jets to implement evenly around a circle
-	WELLSPRING_JET_OFFSET: 0.05,		// how far from center each jet is  (0.13)
+	WELLSPRING_JET_OFFSET: 0.08,		// how far from center each jet is  (0.13)
 	WELLSPRING_JET_STUTTER: 0.025,		// how far apart each splat it along one direction
 	WELLSPRING_JET_WAGGLE: 0.3,		// how much the jet randomly waggles around its direction
     WELLSPRING_SPLAT_FORCE: 800,		// velocity of splat moving out of the jet
 	WELLSPRING_SATURATION: 0.5,		// how saturated to make the colors coming out of the jets    (0.5)
-	WELLSPRING_N_SPLATS: 20,			// number of splats per iteration
+	WELLSPRING_N_SPLATS_X: 10,			// number of splats per iteration in each direction
+	WELLSPRING_N_SPLATS_Y: 10,			// number of splats per iteration in each direction
 	TIME_DILATION: 0.01,				// time is multiplied by this for actuals
 }
 
+// Called initially and whenever the canvas resizes.
+// Width and height are in pixels inside the canvas, which might be mapped inside a single device pixel.
+function wellspringResized( w, h ) {
+
+    // Compute the maximum edge of the box, pulling it in for each direction depending on the size of the canvas.
+    const gutter_long_edge = 0.15;       // leave this much space, calculated on the long edge
+    const aspect_ratio = w / h;
+    const width_is_long = aspect_ratio >= 1.0;
+    const width_gutter  = gutter_long_edge / (width_is_long ? 1.0 : aspect_ratio);
+    const height_gutter = gutter_long_edge * (width_is_long ? aspect_ratio : 1.0);
+    config.WELLSPRING_N_SPLATS_X = Math.max( 3, (0.5 - config.WELLSPRING_JET_OFFSET - width_gutter ) / config.WELLSPRING_JET_STUTTER );
+    config.WELLSPRING_N_SPLATS_Y = Math.max( 3, (0.5 - config.WELLSPRING_JET_OFFSET - height_gutter) / config.WELLSPRING_JET_STUTTER );
+    console.log("num splats", config.WELLSPRING_N_SPLATS_X, config.WELLSPRING_N_SPLATS_Y);
+}
+
+resizeCanvas();
 
 // const wpengine_colors = [
 // 	colorFromHex("0ECAD4"),		// tiffany
@@ -128,7 +145,8 @@ function stepJets() {
             splat(x, y, config.WELLSPRING_SPLAT_FORCE * dx, config.WELLSPRING_SPLAT_FORCE * dy, wpengine_colors[jets[j].color_idx]);
 
             // Update step; finished shooting?
-            if ( ++jets[j].shoot_idx >= config.WELLSPRING_N_SPLATS ) {
+            const max_splats = Math.abs(config.WELLSPRING_N_SPLATS_X*dx) + Math.abs(config.WELLSPRING_N_SPLATS_Y*dy);
+            if ( ++jets[j].shoot_idx >= max_splats ) {
                 jets[j].shoot_idx = -1;
             }
         }
@@ -146,6 +164,7 @@ function shootJet(j) {
 let step_counter = 0;
 let total_time = 0;
 let time_last_jet = 0;
+let time_last_shoot = 0;
 function updateWellspring(dt) {
 
     // Check for paused
@@ -157,14 +176,15 @@ function updateWellspring(dt) {
     total_time += dt;
 
     // Shoot a jet?
-    if ( total_time - time_last_jet > config.WELLSPRING_SECS_BETWEEN_SHOTS ) {
+    if ( total_time - time_last_jet >= config.WELLSPRING_SECS_BETWEEN_SHOTS ) {
         time_last_jet = total_time;
         const j = Math.floor(Math.random() * n_jets);
         shootJet(j);
     }
 
-    // Take steps
-    if ( step_counter % 2 == 0 ) {
+    // Take steps (catch up, and keep our offset)
+    while ( total_time - time_last_shoot >= config.WELLSPRING_SECS_BETWEEN_SHOOT_STEPS ) {
+        time_last_shoot += config.WELLSPRING_SECS_BETWEEN_SHOOT_STEPS;
         stepJets();
     }
     ++step_counter;
@@ -1285,6 +1305,7 @@ function resizeCanvas () {
     if (canvas.width != width || canvas.height != height) {
         canvas.width = width;
         canvas.height = height;
+        wellspringResized( width, height );
         return true;
     }
     return false;
