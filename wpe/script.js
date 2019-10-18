@@ -66,13 +66,16 @@ let config = {
 	WELLSPRING_JET_WAGGLE: 0.3,		// how much the jet randomly waggles around its direction
     WELLSPRING_SPLAT_FORCE: 800,		// velocity of splat moving out of the jet
 	WELLSPRING_SATURATION: 0.5,		// how saturated to make the colors coming out of the jets    (0.5)
-	WELLSPRING_N_SPLATS_X: 10,			// number of splats per iteration in each direction
-	WELLSPRING_N_SPLATS_Y: 10,			// number of splats per iteration in each direction
 	TIME_DILATION: 0.01,				// time is multiplied by this for actuals
 }
 
-// Jet variables
+// Constants
 const TWO_PI = Math.PI*2;
+
+// Stretch the canvas dimensions of [0,1] by this factor, to account for aspect ratio, such that the longest
+// edge stays [0,1] and the short edge maps to [0,w] where w < 1.
+let metric_x = 1.0;
+let metric_y = 1.0;
 
 // Called initially and whenever the canvas resizes.
 // Width and height are in pixels inside the canvas, which might be mapped inside a single device pixel.
@@ -82,6 +85,8 @@ function wellspringResized( w, h ) {
     const gutter_long_edge = 0.15;       // leave this much space, calculated on the long edge
     const aspect_ratio = w / h;
     const width_is_long = aspect_ratio >= 1.0;
+    metric_x = width_is_long ? 1.0 : aspect_ratio;
+    metric_y = width_is_long ? aspect_ratio : 1.0;
     const width_gutter  = gutter_long_edge / (width_is_long ? 1.0 : aspect_ratio);
     const height_gutter = gutter_long_edge * (width_is_long ? aspect_ratio : 1.0);
     config.WELLSPRING_N_SPLATS_X = Math.max( 3, (0.5 - config.WELLSPRING_JET_OFFSET - width_gutter ) / config.WELLSPRING_JET_STUTTER );
@@ -134,8 +139,10 @@ for ( let j = n_jets ; j-- > 0 ; ) {
 function stepJets() {
     for ( let j = n_jets ; j-- > 0 ; ) {
 
-        // Handle in the process of shooting
+        // Handle the case that we're in the process of shooting
         if ( jets[j].shoot_idx >= 0 ) {
+
+            // Splat direction
             const theta = jets[j].theta + (Math.random()-0.5) * config.WELLSPRING_JET_WAGGLE;
             const dx = Math.cos(theta);
             const dy = Math.sin(theta);
@@ -143,10 +150,13 @@ function stepJets() {
             const x = config.WELLSPRING_CX + offset_distance * dx;
             const y = config.WELLSPRING_CY + offset_distance * dy;
             splat(x, y, config.WELLSPRING_SPLAT_FORCE * dx, config.WELLSPRING_SPLAT_FORCE * dy, wpengine_colors[jets[j].color_idx]);
+            ++jets[j].shoot_idx;
 
-            // Update step; finished shooting?
-            const max_splats = Math.abs(config.WELLSPRING_N_SPLATS_X*dx) + Math.abs(config.WELLSPRING_N_SPLATS_Y*dy);
-            if ( ++jets[j].shoot_idx >= max_splats ) {
+            // Update step; finished shooting?  Yes if we've reached (close enough to) the edge of the window
+            const gutter_long_edge = 0.10;       // leave this much space, calculated on the long edge
+            const proximity_to_gutter_x = (x > 0.5 ? (1.0-x) : x) - gutter_long_edge/metric_x;
+            const proximity_to_gutter_y = (y > 0.5 ? (1.0-y) : y) - gutter_long_edge/metric_y;
+            if ( proximity_to_gutter_x <= 0 || proximity_to_gutter_y <= 0 ) {       // close or past the gutter in either direction?
                 jets[j].shoot_idx = -1;
             }
         }
