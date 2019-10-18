@@ -110,11 +110,12 @@ const wpengine_colors = [
 	colorFromHex("7E5CEF"),		// royal
 ];
 const n_colors = wpengine_colors.length;
+const k_color_relatively_prime = 2;     // a number that is relatively prime to the number of colors, so we can cycle "randomly"
 let jet_color_idx = 0;
 
 function getNextColorIdx() {
     const r = jet_color_idx;
-    jet_color_idx = (++jet_color_idx) % n_colors;
+    jet_color_idx = (jet_color_idx + k_color_relatively_prime) % n_colors;
     return r;
 }
 
@@ -160,9 +161,30 @@ function stepJets() {
 
 // Fire off a given jet
 function shootJet(j) {
+    if ( j < 0 ) return;        // do nothing if the jet index is invalid
     jets[j].color_idx = getNextColorIdx();     // advance to the next color
-    jets[j].theta += jet_angle / 3;     // advance the position of the jet a bit
     jets[j].shoot_idx = 0;          // start the jet
+}
+
+// Selects a random jet to fire next.
+// Won't select a jet that is currently firing.
+// Weights towards jets that are pointed towards larger areas.
+function selectRandomJet() {
+
+    // Find a jet that's not in use
+    let j;
+    for ( j = n_jets ; j-- > 0 ; ) {
+        if ( jets[j].shoot_idx < 0 ) {
+            break;
+        }
+    }
+    if ( j < 0 ) { return -1; }     // no available jet?
+
+    // Take aim in random direction
+    jets[j].theta = Math.random() * TWO_PI;
+
+    // Done
+    return j;
 }
 
 // Called every render-step, with the floating-point seconds since the last render-step
@@ -183,8 +205,7 @@ function updateWellspring(dt) {
     // Shoot a jet?
     if ( total_time - time_last_jet >= config.WELLSPRING_SECS_BETWEEN_SHOTS ) {
         time_last_jet = total_time;
-        const j = Math.floor(Math.random() * n_jets);
-        shootJet(j);
+        shootJet( selectRandomJet() );
     }
 
     // Take steps (catch up, and keep our offset)
