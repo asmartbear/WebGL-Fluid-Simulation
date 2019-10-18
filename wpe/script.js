@@ -87,11 +87,6 @@ function wellspringResized( w, h ) {
     const width_is_long = aspect_ratio >= 1.0;
     metric_x = width_is_long ? 1.0 : aspect_ratio;
     metric_y = width_is_long ? aspect_ratio : 1.0;
-    const width_gutter  = gutter_long_edge / (width_is_long ? 1.0 : aspect_ratio);
-    const height_gutter = gutter_long_edge * (width_is_long ? aspect_ratio : 1.0);
-    config.WELLSPRING_N_SPLATS_X = Math.max( 3, (0.5 - config.WELLSPRING_JET_OFFSET - width_gutter ) / config.WELLSPRING_JET_STUTTER );
-    config.WELLSPRING_N_SPLATS_Y = Math.max( 3, (0.5 - config.WELLSPRING_JET_OFFSET - height_gutter) / config.WELLSPRING_JET_STUTTER );
-    console.log("num splats", config.WELLSPRING_N_SPLATS_X, config.WELLSPRING_N_SPLATS_Y);
 }
 
 resizeCanvas();
