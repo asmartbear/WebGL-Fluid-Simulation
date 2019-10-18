@@ -106,6 +106,7 @@ const wpengine_colors = [
 	colorFromHex("43AB3C"),		// dollar bills
 	colorFromHex("FF6C29"),		// sunset
 	// colorFromHex("50E3C2"),		// seafoam
+	colorFromHex("4E2C8F"),		// deeper purple
 	colorFromHex("007EEA"),		// lapis
 	colorFromHex("7E5CEF"),		// royal
 ];
