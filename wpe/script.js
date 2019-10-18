@@ -58,6 +58,7 @@ let config = {
     WELLSPRING: true,				// should we do our splat-generation from the center?
     WELLSPRING_CX: 0.7,             // location of the logo
     WELLSPRING_CY: 0.7,             // location of the logo
+    WELLSPRING_LOGO_BOX_SIZE: 0.2,      // size of the center box part of the logo
     WELLSPRING_SECS_BETWEEN_SHOTS: 1.0,		// how fast should the well-spring generate jets
     WELLSPRING_SECS_BETWEEN_SHOOT_STEPS: 0.035,     // time between each step of a single shot
 	WELLSPRING_JET_COUNT: 7,		// how many jets to implement evenly around a circle
@@ -1370,7 +1371,7 @@ function logoOverlay() {
 	st.fillStyle = "#000000";
 	
 	// Center box of the logo
-	const d_box = Math.floor(Math.min(cw, ch) / 5);
+	const d_box = Math.floor(Math.min(cw, ch) * config.WELLSPRING_LOGO_BOX_SIZE);       // size, based on the smallest side
 	const d_corner = Math.round(d_box / 4);
 	const d_gap = Math.max( Math.round(d_corner / 7), 2 );
 	const d_center_circle = d_corner/2.3;
