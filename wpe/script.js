@@ -110,7 +110,7 @@ const wpengine_colors = [
 	colorFromHex("7E5CEF"),		// royal
 ];
 const n_colors = wpengine_colors.length;
-const k_color_relatively_prime = 2;     // a number that is relatively prime to the number of colors, so we can cycle "randomly"
+const k_color_relatively_prime = 1;     // a number that is relatively prime to the number of colors, so we can cycle "randomly"
 let jet_color_idx = 0;
 
 function getNextColorIdx() {
@@ -180,8 +180,16 @@ function selectRandomJet() {
     }
     if ( j < 0 ) { return -1; }     // no available jet?
 
-    // Take aim in random direction
-    jets[j].theta = Math.random() * TWO_PI;
+    // Select a random location on the map, which naturally will weight towards where there is more area
+    // However, this weights so much that it feels a little too much.  Therefore, some of the time, just
+    // pick a random angle linearly.
+    if ( Math.random() > 0.5 ) {
+        const rx = Math.random();
+        const ry = Math.random();
+        jets[j].theta = Math.atan2(ry - config.WELLSPRING_CY, rx - config.WELLSPRING_CX);
+    } else {
+        jets[j].theta = Math.random() * TWO_PI;
+    }
 
     // Done
     return j;
