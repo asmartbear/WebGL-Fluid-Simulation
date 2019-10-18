@@ -24,10 +24,6 @@ SOFTWARE.
 
 'use strict';
 
-const canvas = document.getElementById('logo-explosion');
-const canvasStencil = document.getElementById('logo-stencil');
-const st = canvasStencil ? (canvasStencil.getContext("2d")) : null;
-
 let config = {
     SIM_RESOLUTION: 128,
     DYE_RESOLUTION: 1024,
@@ -69,6 +65,10 @@ let config = {
 	WELLSPRING_SATURATION: 0.5,		// how saturated to make the colors coming out of the jets    (0.5)
 	TIME_DILATION: 0.01,				// time is multiplied by this for actuals
 }
+
+const canvas = document.getElementById('logo-explosion');
+const canvasStencil = document.getElementById('logo-stencil');
+const st = canvasStencil ? (canvasStencil.getContext("2d")) : null;
 
 // Constants
 const TWO_PI = Math.PI*2;
