@@ -204,8 +204,8 @@ let time_last_jet = 0;
 let time_last_shoot = 0;
 function updateWellspring(dt) {
 
-    // Check for paused
-    if ( config.PAUSED ) {
+    // Check for paused, or not using well-spring at all
+    if ( config.PAUSED || ! config.WELLSPRING ) {
         return;
     }
 
@@ -1772,6 +1772,7 @@ function updatePointerDownData (pointer, id, posX, posY) {
     pointer.deltaX = 0;
     pointer.deltaY = 0;
     pointer.color = generateColor();
+    config.WELLSPRING = false;      // pause well-spring while a pointer is down
 }
 
 function updatePointerMoveData (pointer, posX, posY) {
@@ -1786,6 +1787,9 @@ function updatePointerMoveData (pointer, posX, posY) {
 
 function updatePointerUpData (pointer) {
     pointer.down = false;
+
+    // Resume well-spring after a time
+    config.WELLSPRING = true;
 }
 
 function correctDeltaX (delta) {
