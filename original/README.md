@@ -1,10 +1,10 @@
-# WP Engine Logo Fluid Simulation
+# WebGL Fluid Simulation
 
-Try it [here](https://asmartbear.github.io/WebGL-Fluid-Simulation/).
+[Play here](https://paveldogreat.github.io/WebGL-Fluid-Simulation/)
+
+<img src="/screenshot.jpg?raw=true" width="880">
 
 ## References
-
-Thanks primarily to [PavelDoGreat's WebGL Fluid Simulation](https://github.com/PavelDoGreat/WebGL-Fluid-Simulation).
 
 http://developer.download.nvidia.com/books/HTML/gpugems/gpugems_ch38.html
 
