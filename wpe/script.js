@@ -63,7 +63,8 @@ const wellspring_config = {
 	WELLSPRING_JET_STUTTER: 0.025,		// how far apart each splat it along one direction
 	WELLSPRING_JET_WAGGLE: 0.3,		// how much the jet randomly waggles around its direction
     WELLSPRING_SPLAT_FORCE: 800,		// velocity of splat moving out of the jet
-	WELLSPRING_SATURATION: 0.5,		// how saturated to make the colors coming out of the jets    (0.5)
+    WELLSPRING_SATURATION: 0.5,		// how saturated to make the colors coming out of the jets    (0.5)
+    WELLSPRING_RESUME_DELAY_MS: 3500,      // how long to wait after the last mouse input before enabling the automated wellspring
 	TIME_DILATION: 0.01,				// time is multiplied by this for actuals
 }
 
@@ -144,12 +145,18 @@ function getNextColorIdx() {
 const n_jets = config.WELLSPRING_JET_COUNT;
 const jet_angle = TWO_PI / n_jets;
 const jets = new Array( n_jets );
-for ( let j = n_jets ; j-- > 0 ; ) {
-    jets[j] = {
-        theta: jet_angle * j,         // what direction this jet is currently pointing
-        shoot_idx: 0,                      // which shooting step are we on, or -1 if we're not shooting right now
-        color_idx: getNextColorIdx(),       // index into the wpengine_colors array; initialize with something that spaces out the colors
-    };
+initializeJets();
+
+// Initialize jets to a standard configuration
+function initializeJets() {
+    const theta_offset = Math.random() * TWO_PI;        // offset angle for all jets is itself random
+    for ( let j = n_jets ; j-- > 0 ; ) {
+        jets[j] = {
+            theta: theta_offset + jet_angle * j,         // what direction this jet is currently pointing
+            shoot_idx: 0,                      // which shooting step are we on, or -1 if we're not shooting right now
+            color_idx: getNextColorIdx(),       // index into the wpengine_colors array; initialize with something that spaces out the colors
+        };
+    }
 }
 
 // Take a step of jets being shot
@@ -1328,14 +1335,19 @@ initFramebuffers();
 
 let lastUpdateTime = Date.now();
 let colorUpdateTimer = 0.0;
+let switchToWellspringTime = 0;     // if the time is later than this, switch the configuration back to wellspring, away from manual
 
 update();
 
 function update () {
     const dt = calcDeltaTime();
+    if ( switchToWellspringTime > 0 && lastUpdateTime > switchToWellspringTime && config != wellspring_config ) {
+        config = wellspring_config;
+    }
     if (resizeCanvas() || config != previous_config) {
         updateKeywords();
         initFramebuffers();
+        initializeJets();
         previous_config = config;       // detect whether the config object changed
     }
     updateColors(dt);
@@ -1797,8 +1809,9 @@ function updatePointerDownData (pointer, id, posX, posY) {
     pointer.deltaY = 0;
     pointer.color = generateColor();
 
-    // Switch simulation configuration to manual mode
+    // Switch simulation configuration to manual mode, and push off the the time when we can resume the wellspring
     config = manual_config;
+    switchToWellspringTime = -1;        // don't switch back to wellspring while mouse/touch is active
 }
 
 function updatePointerMoveData (pointer, posX, posY) {
@@ -1809,13 +1822,14 @@ function updatePointerMoveData (pointer, posX, posY) {
     pointer.deltaX = correctDeltaX(pointer.texcoordX - pointer.prevTexcoordX);
     pointer.deltaY = correctDeltaY(pointer.texcoordY - pointer.prevTexcoordY);
     pointer.moved = Math.abs(pointer.deltaX) > 0 || Math.abs(pointer.deltaY) > 0;
+    switchToWellspringTime = -1;        // don't switch back to wellspring while mouse/touch is active
 }
 
 function updatePointerUpData (pointer) {
     pointer.down = false;
 
-    // Resume well-spring simulation configuration (FIXME: after a time?)
-    config = wellspring_config;
+    // Schedule resuming the wellspring after a time-delay
+    switchToWellspringTime = lastUpdateTime + config.WELLSPRING_RESUME_DELAY_MS;
 }
 
 function correctDeltaX (delta) {
