@@ -24,7 +24,8 @@ SOFTWARE.
 
 'use strict';
 
-let config = {
+// Configuration for the default case of the well-spring
+const wellspring_config = {
     SIM_RESOLUTION: 128,
     DYE_RESOLUTION: 1024,
     CAPTURE_RESOLUTION: 512,
@@ -65,6 +66,24 @@ let config = {
 	WELLSPRING_SATURATION: 0.5,		// how saturated to make the colors coming out of the jets    (0.5)
 	TIME_DILATION: 0.01,				// time is multiplied by this for actuals
 }
+
+// config when "manual mode," with the user messing around
+const manual_config = Object.assign({}, wellspring_config);     // shallow copy
+manual_config.DENSITY_DISSIPATION = 1;
+manual_config.VELOCITY_DISSIPATION = 0.8;       // default 0.2
+manual_config.PRESSURE = 0.8;
+manual_config.PRESSURE_ITERATIONS = 20;
+manual_config.SPLAT_RADIUS = 0.25;
+manual_config.SPLAT_FORCE = 6000;
+manual_config.CURL = 13;                // default 30
+manual_config.BLOOM = true;
+manual_config.SUNRAYS = true;
+manual_config.SUNRAYS_WEIGHT = 1.0;
+manual_config.WELLSPRING = false;
+manual_config.TIME_DILATION = 1;
+
+let config = wellspring_config;
+let previous_config = null;
 
 const canvas = document.getElementById('logo-explosion');
 const canvasStencil = document.getElementById('logo-stencil');
@@ -1314,8 +1333,11 @@ update();
 
 function update () {
     const dt = calcDeltaTime();
-    if (resizeCanvas())
+    if (resizeCanvas() || config != previous_config) {
+        updateKeywords();
         initFramebuffers();
+        previous_config = config;       // detect whether the config object changed
+    }
     updateColors(dt);
     updateWellspring(dt);
     applyInputs();
@@ -1449,7 +1471,9 @@ function applyInputs () {
 }
 
 function step (dt) {
-	dt *= config.TIME_DILATION;
+    if ( config.TIME_DILATION < 1 ) {
+        dt *= config.TIME_DILATION;
+    }
     gl.disable(gl.BLEND);
     gl.viewport(0, 0, velocity.width, velocity.height);
 
@@ -1772,7 +1796,9 @@ function updatePointerDownData (pointer, id, posX, posY) {
     pointer.deltaX = 0;
     pointer.deltaY = 0;
     pointer.color = generateColor();
-    config.WELLSPRING = false;      // pause well-spring while a pointer is down
+
+    // Switch simulation configuration to manual mode
+    config = manual_config;
 }
 
 function updatePointerMoveData (pointer, posX, posY) {
@@ -1788,8 +1814,8 @@ function updatePointerMoveData (pointer, posX, posY) {
 function updatePointerUpData (pointer) {
     pointer.down = false;
 
-    // Resume well-spring after a time
-    config.WELLSPRING = true;
+    // Resume well-spring simulation configuration (FIXME: after a time?)
+    config = wellspring_config;
 }
 
 function correctDeltaX (delta) {
