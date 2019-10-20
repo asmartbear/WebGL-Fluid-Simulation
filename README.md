@@ -1,6 +1,6 @@
 # WP Engine Logo Fluid Simulation
 
-Try it [here](https://asmartbear.github.io/WebGL-Fluid-Simulation/).
+Try it [here](https://asmartbear.github.io/wpe-logo-fluid/).
 
 ## References
 
