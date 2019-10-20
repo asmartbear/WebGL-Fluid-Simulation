@@ -24,26 +24,27 @@ SOFTWARE.
 
 'use strict';
 
-// Configuration for the default case of the well-spring
-const wellspring_config = {
+const canvas = document.getElementsByTagName('canvas')[0];
+resizeCanvas();
+
+let config = {
     SIM_RESOLUTION: 128,
     DYE_RESOLUTION: 1024,
     CAPTURE_RESOLUTION: 512,
-    DENSITY_DISSIPATION: 3,		// 1.2
-    VELOCITY_DISSIPATION: 3,		// 0.3
-    PRESSURE: 0.4,				// 0.2
-    PRESSURE_ITERATIONS: 20,		// 20
-    CURL: 10,					// 20
-    SPLAT_RADIUS: 0.3,			// 0.3
+    DENSITY_DISSIPATION: 1,
+    VELOCITY_DISSIPATION: 0.2,
+    PRESSURE: 0.8,
+    PRESSURE_ITERATIONS: 20,
+    CURL: 30,
+    SPLAT_RADIUS: 0.25,
     SPLAT_FORCE: 6000,
     SHADING: true,
     COLORFUL: true,
-    COLOR_UPDATE_SPEED: 2,
+    COLOR_UPDATE_SPEED: 10,
     PAUSED: false,
     BACK_COLOR: { r: 0, g: 0, b: 0 },
-    TRANSPARENT: true,			// background looks great in black, but this way it can be anything, like dark grey.
-	CHECKERBOARD: false,		// should we draw a checkerboard background, in the case that it's transparent?
-    BLOOM: false,
+    TRANSPARENT: false,
+    BLOOM: true,
     BLOOM_ITERATIONS: 8,
     BLOOM_RESOLUTION: 256,
     BLOOM_INTENSITY: 0.8,
@@ -51,221 +52,8 @@ const wellspring_config = {
     BLOOM_SOFT_KNEE: 0.7,
     SUNRAYS: true,
     SUNRAYS_RESOLUTION: 196,
-    SUNRAYS_WEIGHT: 0.7,			// 1.0
-    WELLSPRING: true,				// should we do our splat-generation from the center?
-    WELLSPRING_CX: 0.7,             // location of the logo
-    WELLSPRING_CY: 0.7,             // location of the logo
-    WELLSPRING_LOGO_BOX_SIZE: 0.2,      // size of the center box part of the logo
-    WELLSPRING_SECS_BETWEEN_SHOTS: 1.0,		// how fast should the well-spring generate jets
-    WELLSPRING_SECS_BETWEEN_SHOOT_STEPS: 0.035,     // time between each step of a single shot
-	WELLSPRING_JET_COUNT: 7,		// how many jets to implement evenly around a circle
-	WELLSPRING_JET_OFFSET: 0.08,		// how far from center each jet is  (0.13)
-	WELLSPRING_JET_STUTTER: 0.025,		// how far apart each splat it along one direction
-	WELLSPRING_JET_WAGGLE: 0.3,		// how much the jet randomly waggles around its direction
-    WELLSPRING_SPLAT_FORCE: 800,		// velocity of splat moving out of the jet
-    WELLSPRING_SATURATION: 0.5,		// how saturated to make the colors coming out of the jets    (0.5)
-    WELLSPRING_RESUME_DELAY_MS: 3500,      // how long to wait after the last mouse input before enabling the automated wellspring
-	TIME_DILATION: 0.01,				// time is multiplied by this for actuals
+    SUNRAYS_WEIGHT: 1.0,
 }
-
-// config when "manual mode," with the user messing around
-const manual_config = Object.assign({}, wellspring_config);     // shallow copy
-manual_config.DENSITY_DISSIPATION = 1;
-manual_config.VELOCITY_DISSIPATION = 0.8;       // default 0.2
-manual_config.PRESSURE = 0.8;
-manual_config.PRESSURE_ITERATIONS = 20;
-manual_config.SPLAT_RADIUS = 0.25;
-manual_config.SPLAT_FORCE = 6000;
-manual_config.CURL = 13;                // default 30
-manual_config.BLOOM = true;
-manual_config.SUNRAYS = true;
-manual_config.SUNRAYS_WEIGHT = 1.0;
-manual_config.WELLSPRING = false;
-manual_config.TIME_DILATION = 1;
-
-let config = wellspring_config;
-let previous_config = null;
-
-const canvas = document.getElementById('logo-explosion');
-const canvasStencil = document.getElementById('logo-stencil');
-const st = canvasStencil ? (canvasStencil.getContext("2d")) : null;
-
-// Constants
-const TWO_PI = Math.PI*2;
-
-// Stretch the canvas dimensions of [0,1] by this factor, to account for aspect ratio, such that the longest
-// edge stays [0,1] and the short edge maps to [0,w] where w < 1.
-let metric_x = 1.0;
-let metric_y = 1.0;
-
-// Called initially and whenever the canvas resizes.
-// Width and height are in pixels inside the canvas, which might be mapped inside a single device pixel.
-function wellspringResized( w, h ) {
-
-    // Compute the maximum edge of the box, pulling it in for each direction depending on the size of the canvas.
-    const gutter_long_edge = 0.15;       // leave this much space, calculated on the long edge
-    const aspect_ratio = w / h;
-    const width_is_long = aspect_ratio >= 1.0;
-    metric_x = width_is_long ? 1.0 : aspect_ratio;
-    metric_y = width_is_long ? aspect_ratio : 1.0;
-}
-
-resizeCanvas();
-
-// const wpengine_colors = [
-// 	colorFromHex("0ECAD4"),		// tiffany
-// 	colorFromHex("002838"),		// mirage
-// 	colorFromHex("43AB3C"),		// dollar bills
-// 	colorFromHex("50E3C2"),		// seafoam
-// 	colorFromHex("007EEA"),		// lapis
-// 	colorFromHex("7E5CEF"),		// royal
-// 	colorFromHex("FF6C29"),		// sunset
-// ];
-
-const wpengine_colors = [
-	colorFromHex("00FFFF"),
-	colorFromHex("43AB3C"),		// dollar bills
-	colorFromHex("FF6C29"),		// sunset
-	// colorFromHex("50E3C2"),		// seafoam
-	colorFromHex("4E2C8F"),		// deeper purple
-	colorFromHex("007EEA"),		// lapis
-	colorFromHex("7E5CEF"),		// royal
-];
-const n_colors = wpengine_colors.length;
-const k_color_relatively_prime = 1;     // a number that is relatively prime to the number of colors, so we can cycle "randomly"
-let jet_color_idx = 0;
-
-function getNextColorIdx() {
-    const r = jet_color_idx;
-    jet_color_idx = (jet_color_idx + k_color_relatively_prime) % n_colors;
-    return r;
-}
-
-// Initialize Jets
-const n_jets = config.WELLSPRING_JET_COUNT;
-const jet_angle = TWO_PI / n_jets;
-const jets = new Array( n_jets );
-initializeJets();
-
-// Initialize jets to a standard configuration
-function initializeJets() {
-    const theta_offset = Math.random() * TWO_PI;        // offset angle for all jets is itself random
-    for ( let j = n_jets ; j-- > 0 ; ) {
-        jets[j] = {
-            theta: theta_offset + jet_angle * j,         // what direction this jet is currently pointing
-            shoot_idx: 0,                      // which shooting step are we on, or -1 if we're not shooting right now
-            color_idx: getNextColorIdx(),       // index into the wpengine_colors array; initialize with something that spaces out the colors
-        };
-    }
-}
-
-// Take a step of jets being shot
-function stepJets() {
-    for ( let j = n_jets ; j-- > 0 ; ) {
-
-        // Handle the case that we're in the process of shooting
-        if ( jets[j].shoot_idx >= 0 ) {
-
-            // Splat direction
-            const theta = jets[j].theta + (Math.random()-0.5) * config.WELLSPRING_JET_WAGGLE;
-            const dx = Math.cos(theta);
-            const dy = Math.sin(theta);
-            const offset_distance = config.WELLSPRING_JET_STUTTER*jets[j].shoot_idx + config.WELLSPRING_JET_OFFSET;
-            const x = config.WELLSPRING_CX + offset_distance * dx;
-            const y = config.WELLSPRING_CY + offset_distance * dy;
-            splat(x, y, config.WELLSPRING_SPLAT_FORCE * dx, config.WELLSPRING_SPLAT_FORCE * dy, wpengine_colors[jets[j].color_idx]);
-            ++jets[j].shoot_idx;
-
-            // Update step; finished shooting?  Yes if we've reached (close enough to) the edge of the window
-            const gutter_long_edge = 0.10;       // leave this much space, calculated on the long edge
-            const proximity_to_gutter_x = (x > 0.5 ? (1.0-x) : x) - gutter_long_edge/metric_x;
-            const proximity_to_gutter_y = (y > 0.5 ? (1.0-y) : y) - gutter_long_edge/metric_y;
-            if ( proximity_to_gutter_x <= 0 || proximity_to_gutter_y <= 0 ) {       // close or past the gutter in either direction?
-                jets[j].shoot_idx = -1;
-            }
-        }
-    }
-}
-
-// Fire off a given jet
-function shootJet(j) {
-    if ( j < 0 ) return;        // do nothing if the jet index is invalid
-    jets[j].color_idx = getNextColorIdx();     // advance to the next color
-    jets[j].shoot_idx = 0;          // start the jet
-}
-
-// Selects a random jet to fire next.
-// Won't select a jet that is currently firing.
-// Weights towards jets that are pointed towards larger areas.
-function selectRandomJet() {
-
-    // Find a jet that's not in use
-    let j;
-    for ( j = n_jets ; j-- > 0 ; ) {
-        if ( jets[j].shoot_idx < 0 ) {
-            break;
-        }
-    }
-    if ( j < 0 ) { return -1; }     // no available jet?
-
-    // Select a random location on the map, which naturally will weight towards where there is more area
-    // However, this weights so much that it feels a little too much.  Therefore, some of the time, just
-    // pick a random angle linearly.
-    if ( Math.random() > 0.5 ) {
-        const rx = Math.random();
-        const ry = Math.random();
-        jets[j].theta = Math.atan2(ry - config.WELLSPRING_CY, rx - config.WELLSPRING_CX);
-    } else {
-        jets[j].theta = Math.random() * TWO_PI;
-    }
-
-    // Done
-    return j;
-}
-
-// Called every render-step, with the floating-point seconds since the last render-step
-let step_counter = 0;
-let total_time = 0;
-let time_last_jet = 0;
-let time_last_shoot = 0;
-function updateWellspring(dt) {
-
-    // Check for paused, or not using well-spring at all
-    if ( config.PAUSED || ! config.WELLSPRING ) {
-        return;
-    }
-
-    // Update for this step
-    total_time += dt;
-
-    // Shoot a jet?
-    if ( total_time - time_last_jet >= config.WELLSPRING_SECS_BETWEEN_SHOTS ) {
-        time_last_jet = total_time;
-        shootJet( selectRandomJet() );
-    }
-
-    // Take steps (catch up, and keep our offset)
-    while ( total_time - time_last_shoot >= config.WELLSPRING_SECS_BETWEEN_SHOOT_STEPS ) {
-        time_last_shoot += config.WELLSPRING_SECS_BETWEEN_SHOOT_STEPS;
-        stepJets();
-    }
-    ++step_counter;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 function pointerPrototype () {
     this.id = -1;
@@ -278,7 +66,7 @@ function pointerPrototype () {
     this.down = false;
     this.moved = false;
     this.color = [30, 0, 300];
-};
+}
 
 let pointers = [];
 let splatStack = [];
@@ -389,9 +177,6 @@ function supportRenderTextureFormat (gl, internalFormat, format, type) {
 }
 
 function startGUI () {
-	if ( typeof dat === "undefined" ) {		// GUI disabled?
-		return;
-	}
     var gui = new dat.GUI({ width: 300 });
     gui.add(config, 'DYE_RESOLUTION', { 'high': 1024, 'medium': 512, 'low': 256, 'very low': 128 }).name('quality').onFinishChange(initFramebuffers);
     gui.add(config, 'SIM_RESOLUTION', { '32': 32, '64': 64, '128': 128, '256': 256 }).name('sim resolution').onFinishChange(initFramebuffers);
@@ -678,7 +463,6 @@ const blurShader = compileShader(gl.FRAGMENT_SHADER, `
         gl_FragColor = sum;
     }
 `);
-// 0.35294117 = 6/17
 
 const copyShader = compileShader(gl.FRAGMENT_SHADER, `
     precision mediump float;
@@ -1121,8 +905,7 @@ let bloomFramebuffers = [];
 let sunrays;
 let sunraysTemp;
 
-// CHANGE: Removed dithering texture. If we need it, that's fine, but it's nicer if we don't have additional things to load.
-let ditheringTexture = null; // createTextureAsync('LDR_LLL1_0.png');
+let ditheringTexture = createTextureAsync('LDR_LLL1_0.png');
 
 const blurProgram            = new Program(blurVertexShader, blurShader);
 const copyProgram            = new Program(baseVertexShader, copyShader);
@@ -1330,33 +1113,20 @@ function updateKeywords () {
 
 updateKeywords();
 initFramebuffers();
-// CHANGE: Don't start with random splats.
-//multipleSplats(parseInt(Math.random() * 20) + 5);
+multipleSplats(parseInt(Math.random() * 20) + 5);
 
 let lastUpdateTime = Date.now();
 let colorUpdateTimer = 0.0;
-let switchToWellspringTime = 0;     // if the time is later than this, switch the configuration back to wellspring, away from manual
-
 update();
 
 function update () {
     const dt = calcDeltaTime();
-    if ( switchToWellspringTime > 0 && lastUpdateTime > switchToWellspringTime && config != wellspring_config ) {
-        config = wellspring_config;
-    }
-    if (resizeCanvas() || config != previous_config) {
-        updateKeywords();
+    if (resizeCanvas())
         initFramebuffers();
-        initializeJets();
-        previous_config = config;       // detect whether the config object changed
-    }
     updateColors(dt);
-    updateWellspring(dt);
     applyInputs();
-	logoOverlay();
-    if (!config.PAUSED) {
+    if (!config.PAUSED)
         step(dt);
-	}
     render(null);
     requestAnimationFrame(update);
 }
@@ -1375,7 +1145,6 @@ function resizeCanvas () {
     if (canvas.width != width || canvas.height != height) {
         canvas.width = width;
         canvas.height = height;
-        wellspringResized( width, height );
         return true;
     }
     return false;
@@ -1393,83 +1162,6 @@ function updateColors (dt) {
     }
 }
 
-function logoOverlay() {
-	if ( ! st ) return;		// no stencil canvas?
-	
-	const TWO_PI = Math.PI*2;
-	const cw = st.canvas.width = st.canvas.clientWidth;
-    const ch = st.canvas.height = st.canvas.clientHeight;
-    const cx = config.WELLSPRING_CX * cw;
-    const cy = (1.0-config.WELLSPRING_CY) * ch;     // convert Y axis to left-handed
-	st.clearRect(0, 0, cw, ch);
-	st.fillStyle = "#000000";
-	
-	// Center box of the logo
-	const d_box = Math.floor(Math.min(cw, ch) * config.WELLSPRING_LOGO_BOX_SIZE);       // size, based on the smallest side
-	const d_corner = Math.round(d_box / 4);
-	const d_gap = Math.max( Math.round(d_corner / 7), 2 );
-	const d_center_circle = d_corner/2.3;
-	const c_left = Math.floor(cx - d_box/2);
-	const c_right = c_left + d_box;
-	const c_top = Math.floor(cy - d_box/2);
-	const c_bottom = c_top + d_box;
-	
-	// Center circle
-	st.fillStyle = "rgba(0,0,0,1)";
-	st.beginPath();
-	st.arc(cx, cy, d_center_circle, 0, TWO_PI);
-	st.fill();
-	st.fillStyle = "#000000";
-	
-	// Main box
-	st.globalCompositeOperation = "source-out";		// allow the transparent circle to stay that way
-	st.fillRect(c_left, c_top, c_right-c_left, c_bottom-c_top);
-	st.globalCompositeOperation = "source-over";
-	
-	// Long dividing lines, with gradient of opacity as they get away from the main box
-	const transparentGradient = st.createRadialGradient(cx, cy, d_box/2 + d_corner*2, cx, cy, d_box*1.5);
-	transparentGradient.addColorStop(0, 'rgba(0,0,0,1)');
-	transparentGradient.addColorStop(1, 'rgba(0,0,0,0)');
-	st.fillStyle = transparentGradient;
-	st.fillRect(0, c_top-d_gap/2, cw, d_gap);
-	st.fillRect(0, c_bottom-d_gap/2, cw, d_gap);
-	st.fillRect(c_left-d_gap/2, 0, d_gap, ch);
-	st.fillRect(c_right-d_gap/2, 0, d_gap, ch);
-	st.fillStyle = "#000000";
-	
-	// Corner: Top-Left
-	st.beginPath();
-	st.moveTo(c_left, c_top);
-	st.lineTo(c_left, c_top - d_corner);
-	st.lineTo(c_left + d_corner, c_top);
-	st.fill();
-	
-	// Corner: Top-Right
-	st.beginPath();
-	st.moveTo(c_right - d_corner, c_top);
-	st.lineTo(c_right, c_top - d_corner);
-	st.lineTo(c_right + d_corner, c_top);
-	st.lineTo(c_right, c_top + d_corner);
-	st.fill();
-	
-	// Corner: Bottom-Right
-	st.beginPath();
-	st.moveTo(c_right, c_bottom - d_corner);
-	st.lineTo(c_right + d_corner, c_bottom);
-	st.lineTo(c_right, c_bottom);
-	st.lineTo(c_right, c_bottom + d_corner);
-	st.lineTo(c_right - d_corner, c_bottom);
-	st.fill();
-	
-	// Corner: Bottom-Left
-	st.beginPath();
-	st.moveTo(c_left + d_corner, c_bottom);
-	st.lineTo(c_left, c_bottom + d_corner);
-	st.lineTo(c_left - d_corner, c_bottom);
-	st.lineTo(c_left, c_bottom - d_corner);
-	st.fill();
-}
-
 function applyInputs () {
     if (splatStack.length > 0)
         multipleSplats(splatStack.pop());
@@ -1483,9 +1175,6 @@ function applyInputs () {
 }
 
 function step (dt) {
-    if ( config.TIME_DILATION < 1 ) {
-        dt *= config.TIME_DILATION;
-    }
     gl.disable(gl.BLEND);
     gl.viewport(0, 0, velocity.width, velocity.height);
 
@@ -1576,7 +1265,7 @@ function render (target) {
     let fbo = target == null ? null : target.fbo;
     if (!config.TRANSPARENT)
         drawColor(fbo, normalizeColor(config.BACK_COLOR));
-    if (target == null && config.TRANSPARENT && config.CHECKERBOARD)
+    if (target == null && config.TRANSPARENT)
         drawCheckerboard(fbo);
     drawDisplay(fbo, width, height);
 }
@@ -1600,11 +1289,9 @@ function drawDisplay (fbo, width, height) {
     gl.uniform1i(displayMaterial.uniforms.uTexture, dye.read.attach(0));
     if (config.BLOOM) {
         gl.uniform1i(displayMaterial.uniforms.uBloom, bloom.attach(1));
-		if ( ditheringTexture ) {
-			gl.uniform1i(displayMaterial.uniforms.uDithering, ditheringTexture.attach(2));
-	        let scale = getTextureScale(ditheringTexture, width, height);
-	        gl.uniform2f(displayMaterial.uniforms.ditherScale, scale.x, scale.y);
-		}
+        gl.uniform1i(displayMaterial.uniforms.uDithering, ditheringTexture.attach(2));
+        let scale = getTextureScale(ditheringTexture, width, height);
+        gl.uniform2f(displayMaterial.uniforms.ditherScale, scale.x, scale.y);
     }
     if (config.SUNRAYS)
         gl.uniform1i(displayMaterial.uniforms.uSunrays, sunrays.attach(3));
@@ -1732,10 +1419,7 @@ function correctRadius (radius) {
     return radius;
 }
 
-// The canvas that is on top, and thus should be listening for mouse/touch events
-const listenCanvas = canvasStencil;
-
-listenCanvas.addEventListener('mousedown', e => {
+canvas.addEventListener('mousedown', e => {
     let posX = scaleByPixelRatio(e.offsetX);
     let posY = scaleByPixelRatio(e.offsetY);
     let pointer = pointers.find(p => p.id == -1);
@@ -1744,7 +1428,7 @@ listenCanvas.addEventListener('mousedown', e => {
     updatePointerDownData(pointer, -1, posX, posY);
 });
 
-listenCanvas.addEventListener('mousemove', e => {
+canvas.addEventListener('mousemove', e => {
     let pointer = pointers[0];
     if (!pointer.down) return;
     let posX = scaleByPixelRatio(e.offsetX);
@@ -1756,7 +1440,7 @@ window.addEventListener('mouseup', () => {
     updatePointerUpData(pointers[0]);
 });
 
-listenCanvas.addEventListener('touchstart', e => {
+canvas.addEventListener('touchstart', e => {
     e.preventDefault();
     const touches = e.targetTouches;
     while (touches.length >= pointers.length)
@@ -1768,7 +1452,7 @@ listenCanvas.addEventListener('touchstart', e => {
     }
 });
 
-listenCanvas.addEventListener('touchmove', e => {
+canvas.addEventListener('touchmove', e => {
     e.preventDefault();
     const touches = e.targetTouches;
     for (let i = 0; i < touches.length; i++) {
@@ -1808,10 +1492,6 @@ function updatePointerDownData (pointer, id, posX, posY) {
     pointer.deltaX = 0;
     pointer.deltaY = 0;
     pointer.color = generateColor();
-
-    // Switch simulation configuration to manual mode, and push off the the time when we can resume the wellspring
-    config = manual_config;
-    switchToWellspringTime = -1;        // don't switch back to wellspring while mouse/touch is active
 }
 
 function updatePointerMoveData (pointer, posX, posY) {
@@ -1822,14 +1502,10 @@ function updatePointerMoveData (pointer, posX, posY) {
     pointer.deltaX = correctDeltaX(pointer.texcoordX - pointer.prevTexcoordX);
     pointer.deltaY = correctDeltaY(pointer.texcoordY - pointer.prevTexcoordY);
     pointer.moved = Math.abs(pointer.deltaX) > 0 || Math.abs(pointer.deltaY) > 0;
-    switchToWellspringTime = -1;        // don't switch back to wellspring while mouse/touch is active
 }
 
 function updatePointerUpData (pointer) {
     pointer.down = false;
-
-    // Schedule resuming the wellspring after a time-delay
-    switchToWellspringTime = lastUpdateTime + config.WELLSPRING_RESUME_DELAY_MS;
 }
 
 function correctDeltaX (delta) {
@@ -1883,16 +1559,6 @@ function normalizeColor (input) {
         b: input.b / 255
     };
     return output;
-}
-
-// From hex string, produce [0,1] color structure
-function colorFromHex(input) {
-	const k_saturation = config.WELLSPRING_SATURATION / 255.0;
-	return {
-		r: parseInt(input.substring(0,2), 16) * k_saturation,
-		g: parseInt(input.substring(2,4), 16) * k_saturation,
-		b: parseInt(input.substring(4,6), 16) * k_saturation
-	};
 }
 
 function wrap (value, min, max) {
