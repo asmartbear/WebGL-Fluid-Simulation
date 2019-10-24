@@ -66,7 +66,7 @@ const wellspring_config = {
     WELLSPRING_SATURATION: 0.5,		// how saturated to make the colors coming out of the jets    (0.5)
     WELLSPRING_RESUME_DELAY_MS: 3500,      // how long to wait after the last mouse input before enabling the automated wellspring
     TIME_DILATION: 0.01,				// time is multiplied by this for actuals
-    VERSION: 124,                       // version number of the code
+    VERSION: 125,                       // version number of the code
     SHOW_VERSION: true,                 // should we show the version number in the display
 }
 
@@ -290,7 +290,7 @@ pointers.push(new pointerPrototype());
 const { gl, ext } = getWebGLContext(canvas);
 
 if (isMobile()) {
-    // config.DYE_RESOLUTION = 512;
+    config.DYE_RESOLUTION = 512;
 }
 if (!ext.supportLinearFiltering) {
     config.DYE_RESOLUTION = 512;
