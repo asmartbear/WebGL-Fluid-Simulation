@@ -66,7 +66,7 @@ const wellspring_config = {
     WELLSPRING_SATURATION: 0.5,		// how saturated to make the colors coming out of the jets    (0.5)
     WELLSPRING_RESUME_DELAY_MS: 3500,      // how long to wait after the last mouse input before enabling the automated wellspring
     TIME_DILATION: 0.01,				// time is multiplied by this for actuals
-    VERSION: 127,                       // version number of the code
+    VERSION: 128,                       // version number of the code
     SHOW_VERSION: true,                 // should we show the version number in the display
 }
 
@@ -89,9 +89,10 @@ manual_config.TIME_DILATION = 1;
 let config = wellspring_config;
 let previous_config = null;
 
+const canvasOptions = { desynchronized: true };
 const canvas = document.getElementById('logo-explosion');
 const canvasStencil = document.getElementById('logo-stencil');
-const st = canvasStencil ? (canvasStencil.getContext("2d")) : null;
+const st = canvasStencil ? (canvasStencil.getContext("2d", canvasOptions)) : null;
 
 // Constants
 const TWO_PI = Math.PI*2;
@@ -300,7 +301,7 @@ if (!ext.supportLinearFiltering) {
 }
 
 function getWebGLContext (canvas) {
-    const params = { alpha: true, depth: false, stencil: false, antialias: false, preserveDrawingBuffer: false };
+    const params = { alpha: true, depth: false, stencil: false, antialias: false, preserveDrawingBuffer: false, desynchronized: true };
 
     let gl = canvas.getContext('webgl2', params);
     const isWebGL2 = !!gl;
