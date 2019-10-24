@@ -66,7 +66,7 @@ const wellspring_config = {
     WELLSPRING_SATURATION: 0.5,		// how saturated to make the colors coming out of the jets    (0.5)
     WELLSPRING_RESUME_DELAY_MS: 3500,      // how long to wait after the last mouse input before enabling the automated wellspring
     TIME_DILATION: 0.01,				// time is multiplied by this for actuals
-    VERSION: 125,                       // version number of the code
+    VERSION: 126,                       // version number of the code
     SHOW_VERSION: true,                 // should we show the version number in the display
 }
 
@@ -1251,6 +1251,21 @@ function updateKeywords () {
     displayMaterial.setKeywords(displayKeywords);
 }
 
+// Clear the fluid area, at least mostly.
+// Would be great if there were a fast way to do this; instead, use an extreme config that kills the colors and step() it into existance.
+function clearFluid() {
+    console.log("clearing fluid");
+    const original_config = config;
+    config = Object.assign( {}, config );       // make a copy so we can put extreme values in there
+    config.WELLSPRING = false;
+    config.SUNRAYS = false;
+    config.BLOOM = false;
+    config.DENSITY_DISSIPATION = 100;
+    step(1.0/60);
+    step(1.0/60);
+    config = original_config;       // restore config; the exact config object is important!
+}
+
 updateKeywords();
 initFramebuffers();
 // CHANGE: Don't start with random splats.
@@ -1267,7 +1282,7 @@ function update () {
 
     // Check: Switching from wellspring to manual
     if ( config && config == manual_config && previous_config != manual_config ) {
-        // gl.clear(gl.DEPTH_BUFFER_BIT | gl.COLOR_BUFFER_BIT);
+        clearFluid();        
     }
 
     // Check: Time to switch back from manual to wellspring
