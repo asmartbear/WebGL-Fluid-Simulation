@@ -66,7 +66,7 @@ const wellspring_config = {
     WELLSPRING_SATURATION: 0.5,		// how saturated to make the colors coming out of the jets    (0.5)
     WELLSPRING_RESUME_DELAY_MS: 3500,      // how long to wait after the last mouse input before enabling the automated wellspring
     TIME_DILATION: 0.01,				// time is multiplied by this for actuals
-    VERSION: 123,                       // version number of the code
+    VERSION: 124,                       // version number of the code
     SHOW_VERSION: true,                 // should we show the version number in the display
 }
 
@@ -1264,6 +1264,13 @@ update();
 
 function update () {
     const dt = calcDeltaTime();
+
+    // Check: Switching from wellspring to manual
+    if ( config && config == manual_config && previous_config != manual_config ) {
+        // gl.clear(gl.DEPTH_BUFFER_BIT | gl.COLOR_BUFFER_BIT);
+    }
+
+    // Check: Time to switch back from manual to wellspring
     if ( switchToWellspringTime > 0 && lastUpdateTime > switchToWellspringTime && config != wellspring_config ) {
         config = wellspring_config;
     }
