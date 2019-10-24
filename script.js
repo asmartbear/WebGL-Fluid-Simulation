@@ -57,8 +57,8 @@ const wellspring_config = {
     WELLSPRING_CY: 0.7,             // location of the logo
     WELLSPRING_LOGO_BOX_SIZE: 0.2,      // size of the center box part of the logo
     WELLSPRING_SECS_BETWEEN_SHOTS: 1.0,		// how fast should the well-spring generate jets
-    WELLSPRING_SECS_BETWEEN_SHOOT_STEPS: 0.035,     // time between each step of a single shot
-	WELLSPRING_JET_COUNT: 7,		// how many jets to implement evenly around a circle
+    WELLSPRING_SECS_BETWEEN_SHOOT_STEPS: 0.025,     // time between each step of a single shot
+	WELLSPRING_JET_COUNT: 9,		// how many jets to implement evenly around a circle
 	WELLSPRING_JET_OFFSET: 0.08,		// how far from center each jet is  (0.13)
 	WELLSPRING_JET_STUTTER: 0.025,		// how far apart each splat it along one direction
 	WELLSPRING_JET_WAGGLE: 0.3,		// how much the jet randomly waggles around its direction
@@ -66,7 +66,7 @@ const wellspring_config = {
     WELLSPRING_SATURATION: 0.5,		// how saturated to make the colors coming out of the jets    (0.5)
     WELLSPRING_RESUME_DELAY_MS: 3500,      // how long to wait after the last mouse input before enabling the automated wellspring
     TIME_DILATION: 0.01,				// time is multiplied by this for actuals
-    VERSION: 129,                       // version number of the code
+    VERSION: 130,                       // version number of the code
     SHOW_VERSION: false,                 // should we show the version number in the display
 }
 
