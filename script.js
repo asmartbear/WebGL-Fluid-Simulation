@@ -65,7 +65,9 @@ const wellspring_config = {
     WELLSPRING_SPLAT_FORCE: 800,		// velocity of splat moving out of the jet
     WELLSPRING_SATURATION: 0.5,		// how saturated to make the colors coming out of the jets    (0.5)
     WELLSPRING_RESUME_DELAY_MS: 3500,      // how long to wait after the last mouse input before enabling the automated wellspring
-	TIME_DILATION: 0.01,				// time is multiplied by this for actuals
+    TIME_DILATION: 0.01,				// time is multiplied by this for actuals
+    VERSION: 123,                       // version number of the code
+    SHOW_VERSION: true,                 // should we show the version number in the display
 }
 
 // config when "manual mode," with the user messing around
@@ -1388,7 +1390,14 @@ function logoOverlay() {
 	st.lineTo(c_left, c_bottom + d_corner);
 	st.lineTo(c_left - d_corner, c_bottom);
 	st.lineTo(c_left, c_bottom - d_corner);
-	st.fill();
+    st.fill();
+    
+    // Version number (for debugging which version is being shown in Github Pages)
+    if ( config.SHOW_VERSION ) {
+        st.fillStyle = "#ffffff";
+        st.font = '14px Courier New';
+        st.fillText( config.VERSION, 20, 20 );
+    }
 }
 
 function applyInputs () {
