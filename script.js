@@ -66,18 +66,18 @@ const wellspring_config = {
     WELLSPRING_SATURATION: 0.5,		// how saturated to make the colors coming out of the jets    (0.5)
     WELLSPRING_RESUME_DELAY_MS: 3500,      // how long to wait after the last mouse input before enabling the automated wellspring
     TIME_DILATION: 0.01,				// time is multiplied by this for actuals
-    VERSION: 126,                       // version number of the code
+    VERSION: 127,                       // version number of the code
     SHOW_VERSION: true,                 // should we show the version number in the display
 }
 
 // config when "manual mode," with the user messing around
 const manual_config = Object.assign({}, wellspring_config);     // shallow copy
 manual_config.DENSITY_DISSIPATION = 1;
-manual_config.VELOCITY_DISSIPATION = 0.8;       // default 0.2
+manual_config.VELOCITY_DISSIPATION = 0.6;       // default 0.2
 manual_config.PRESSURE = 0.8;
 manual_config.PRESSURE_ITERATIONS = 20;
 manual_config.SPLAT_RADIUS = 0.25;
-manual_config.SPLAT_FORCE = 6000;
+manual_config.SPLAT_FORCE = 7000;
 // manual_config.CURL = 13;                // default 30
 manual_config.CURL = 0;                // default 30
 manual_config.BLOOM = true;
