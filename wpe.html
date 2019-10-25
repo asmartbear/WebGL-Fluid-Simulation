@@ -253,7 +253,14 @@ var wpeConsentData = {"restRoot":"https:\/\/wpengine.com\/wp-json\/","optInNonce
   				-webkit-text-stroke: 1px black;
 				  color: white;
 				  font-weight: bold;
+			}
+
+			.fl-module-class-cta-block {
                 user-select: none;
+			}
+
+			.button--hollow-white {
+				background: #007EEA;
 			}
 
 			.logosplosion {
@@ -286,11 +293,24 @@ var wpeConsentData = {"restRoot":"https:\/\/wpengine.com\/wp-json\/","optInNonce
         	<canvas id="logo-stencil"></canvas>
 		</div>
 		<script>
+
+			// Override the default configuration with what's best for the WP Engine Home Page
 			const logo_explosion_config = {
 				WELLSPRING_CX: 0.8,
 				WELLSPRING_CY: 0.5,
 				WELLSPRING_LOGO_BOX_SIZE: 0.25,
 			};
+
+			// Pass mouse events from the fluid section (that aren't for buttons or links) to the canvases
+			jQuery(document).ready(function() {
+				jQuery(".fl-module-class-cta-block:first").mousedown(function(e){
+					console.log("mouse down");
+					jQuery("#logo-stencil").mousedown(e);
+				}).mousemove(function(e){
+					jQuery("#logo-stencil").mousemove(e);
+				});
+			});
+
 		</script>
         <script src="./script.js"></script>		<!-- N.B. Can be moved to the bottom of the page, and/or "async," so the load isn't blocked -->
 <!--

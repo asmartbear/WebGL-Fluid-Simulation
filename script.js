@@ -66,8 +66,8 @@ const wellspring_config = Object.assign( {
     WELLSPRING_SATURATION: 0.5,		// how saturated to make the colors coming out of the jets    (0.5)
     WELLSPRING_RESUME_DELAY_MS: 3500,      // how long to wait after the last mouse input before enabling the automated wellspring
     TIME_DILATION: 0.01,				// time is multiplied by this for actuals
-    VERSION: 134,                       // version number of the code
-    SHOW_VERSION: true,                 // should we show the version number in the display
+    VERSION: 136,                       // version number of the code
+    SHOW_VERSION: false,                 // should we show the version number in the display
 }, (typeof(logo_explosion_config) === "object" ? logo_explosion_config : {}) );     // apply external configuration override object, if there is one
 
 // config when "manual mode," with the user messing around
@@ -183,7 +183,7 @@ function stepJets() {
             ++jets[j].shoot_idx;
 
             // Update step; finished shooting?  Yes if we've reached (close enough to) the edge of the window
-            const gutter_long_edge = 0.10;       // leave this much space, calculated on the long edge
+            const gutter_long_edge = 0.01;       // leave this much space, calculated on the long edge
             const proximity_to_gutter_x = (x > 0.5 ? (1.0-x) : x) - gutter_long_edge/metric_x;
             const proximity_to_gutter_y = (y > 0.5 ? (1.0-y) : y) - gutter_long_edge/metric_y;
             if ( proximity_to_gutter_x <= 0 || proximity_to_gutter_y <= 0 ) {       // close or past the gutter in either direction?
