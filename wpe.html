@@ -308,6 +308,11 @@ var wpeConsentData = {"restRoot":"https:\/\/wpengine.com\/wp-json\/","optInNonce
 					document.getElementById('logo-stencil').dispatchEvent(new CustomEvent(e.type, e));
 				}).mousemove(function(e){
 					document.getElementById('logo-stencil').dispatchEvent(new CustomEvent(e.type, e));
+				}).touchstart(function(e){
+					if ( e.target.nodeName == "A" ) return;		// don't take clicks on buttons and links
+					document.getElementById('logo-stencil').dispatchEvent(new CustomEvent(e.type, e));
+				}).touchmove(function(e){
+					document.getElementById('logo-stencil').dispatchEvent(new CustomEvent(e.type, e));
 				});
 			});
 
