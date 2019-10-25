@@ -301,9 +301,10 @@ var wpeConsentData = {"restRoot":"https:\/\/wpengine.com\/wp-json\/","optInNonce
 				WELLSPRING_LOGO_BOX_SIZE: 0.25,
 			};
 
-			// Pass mouse events from the fluid section (that aren't for buttons or links) to the canvases
+			// Pass mouse events from the fluid section (that aren't for buttons or links) to the canvas
 			jQuery(document).ready(function() {
 				jQuery(".fl-module-class-cta-block:first").mousedown(function(e){
+					if ( e.target.nodeName == "A" ) return;		// don't take clicks on buttons and links
 					document.getElementById('logo-stencil').dispatchEvent(new CustomEvent(e.type, e));
 				}).mousemove(function(e){
 					document.getElementById('logo-stencil').dispatchEvent(new CustomEvent(e.type, e));
