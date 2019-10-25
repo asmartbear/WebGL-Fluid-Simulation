@@ -90,6 +90,7 @@ manual_config.TIME_DILATION = 1;
 let config = wellspring_config;
 let previous_config = null;
 
+// Locate the two canvases
 const canvasOptions = { desynchronized: true };
 const canvas = document.getElementById('logo-explosion');
 const canvasStencil = document.getElementById('logo-stencil');
@@ -1266,6 +1267,25 @@ function clearFluid() {
     config = original_config;       // restore config; the exact config object is important!
 }
 
+// Called whenever we're switching to manual mode
+function switchToManual() {
+
+    // (Mostly) clear the fluid area
+    clearFluid();
+
+    // Change the Z-order so we overlap the website text
+    canvasStencil.style.zIndex = 2;
+    canvas.style.zIndex = 1;
+}
+
+// Called whenever we're switching out of manual mode
+function switchToWellspring() {
+
+    // Change the Z-order so we the website text is on top
+    canvas.style.zIndex = 0;
+    canvasStencil.style.zIndex = 0;
+}
+
 updateKeywords();
 initFramebuffers();
 // CHANGE: Don't start with random splats.
@@ -1282,12 +1302,13 @@ function update () {
 
     // Check: Switching from wellspring to manual
     if ( config && config == manual_config && previous_config != manual_config ) {
-        clearFluid();        
+        switchToManual();
     }
 
     // Check: Time to switch back from manual to wellspring
     if ( switchToWellspringTime > 0 && lastUpdateTime > switchToWellspringTime && config != wellspring_config ) {
         config = wellspring_config;
+        switchToWellspring();
     }
     if (resizeCanvas() || config != previous_config) {
         updateKeywords();
