@@ -304,10 +304,9 @@ var wpeConsentData = {"restRoot":"https:\/\/wpengine.com\/wp-json\/","optInNonce
 			// Pass mouse events from the fluid section (that aren't for buttons or links) to the canvases
 			jQuery(document).ready(function() {
 				jQuery(".fl-module-class-cta-block:first").mousedown(function(e){
-					console.log("mouse down");
-					jQuery("#logo-stencil").mousedown(e);
+					document.getElementById('logo-stencil').dispatchEvent(new CustomEvent(e.type, e));
 				}).mousemove(function(e){
-					jQuery("#logo-stencil").mousemove(e);
+					document.getElementById('logo-stencil').dispatchEvent(new CustomEvent(e.type, e));
 				});
 			});
 

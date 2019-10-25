@@ -58,7 +58,7 @@ const wellspring_config = Object.assign( {
     WELLSPRING_LOGO_BOX_SIZE: 0.2,      // size of the center box part of the logo
     WELLSPRING_SECS_BETWEEN_SHOTS: 1.0,		// how fast should the well-spring generate jets
     WELLSPRING_SECS_BETWEEN_SHOOT_STEPS: 0.025,     // time between each step of a single shot
-	WELLSPRING_JET_COUNT: 9,		// how many jets to implement evenly around a circle
+	WELLSPRING_JET_COUNT: isMobile() ? 5 : 9,		// how many jets to implement evenly around a circle
 	WELLSPRING_JET_OFFSET: 0.08,		// how far from center each jet is  (0.13)
 	WELLSPRING_JET_STUTTER: 0.025,		// how far apart each splat it along one direction
 	WELLSPRING_JET_WAGGLE: 0.3,		// how much the jet randomly waggles around its direction
@@ -66,8 +66,8 @@ const wellspring_config = Object.assign( {
     WELLSPRING_SATURATION: 0.5,		// how saturated to make the colors coming out of the jets    (0.5)
     WELLSPRING_RESUME_DELAY_MS: 3500,      // how long to wait after the last mouse input before enabling the automated wellspring
     TIME_DILATION: 0.01,				// time is multiplied by this for actuals
-    VERSION: 136,                       // version number of the code
-    SHOW_VERSION: false,                 // should we show the version number in the display
+    VERSION: 137,                       // version number of the code
+    SHOW_VERSION: true,                 // should we show the version number in the display
 }, (typeof(logo_explosion_config) === "object" ? logo_explosion_config : {}) );     // apply external configuration override object, if there is one
 
 // config when "manual mode," with the user messing around
