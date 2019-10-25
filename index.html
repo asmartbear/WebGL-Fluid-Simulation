@@ -11,9 +11,6 @@
 
         <title>WP Engine Logo Explosion</title>
 
-<!--
-        <script type="text/javascript" src="../dat.gui.min.js"></script>
--->
         <style>
             * {
                 user-select: none;
@@ -36,6 +33,13 @@
                 height: 100%;
 			}
 			
+        </style>
+
+        <style>
+			.logosplosion {
+                user-select: none;
+			}
+			
 			#logo-stencil {
 				position: absolute;
 				left: 0px;
@@ -50,71 +54,7 @@
 				height: 100%;
 			}
 			
-			/*
-
-            .dg {
-                opacity: 0.9;
-            }
-
-            .dg .property-name {
-                overflow: visible;
-            }
-
-            @font-face {
-                font-family: 'iconfont';
-                src: url('iconfont.ttf') format('truetype');
-            }
-
-            .bigFont {
-                font-size: 150%;
-                color: #8C8C8C;
-            }
-
-            .cr.function.appBigFont {
-                font-size: 150%;
-                line-height: 27px;
-                color: #A5F8D3;
-                background-color: #023C40;
-            }
-
-            .cr.function.appBigFont .property-name {
-                float: none;
-            }
-
-            .cr.function.appBigFont .icon {
-                position: sticky;
-                bottom: 27px;
-            }
-
-            .icon {
-                font-family: 'iconfont';
-                font-size: 130%;
-                float: right;
-            }
-
-            .twitter:before {
-                content: 'a';
-            }
-
-            .github:before {
-                content: 'b';
-            }
-
-            .app:before {
-                content: 'c';
-            }
-
-            .discord:before {
-                content: 'd';
-            }
-			
-			*/
         </style>
-        <script>
-			// We're not actually going to send events to Google, but currently the source code expects this
-			// function to exist, so allow events to be accumulated to avoid Javascript errors.
-            window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
-        </script>
     </head>
     <body>
 		<div class="logosplosion">

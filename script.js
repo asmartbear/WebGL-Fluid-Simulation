@@ -25,7 +25,7 @@ SOFTWARE.
 'use strict';
 
 // Configuration for the default case of the well-spring
-const wellspring_config = {
+const wellspring_config = Object.assign( {
     SIM_RESOLUTION: 128,
     DYE_RESOLUTION: 1024,
     CAPTURE_RESOLUTION: 512,
@@ -66,9 +66,9 @@ const wellspring_config = {
     WELLSPRING_SATURATION: 0.5,		// how saturated to make the colors coming out of the jets    (0.5)
     WELLSPRING_RESUME_DELAY_MS: 3500,      // how long to wait after the last mouse input before enabling the automated wellspring
     TIME_DILATION: 0.01,				// time is multiplied by this for actuals
-    VERSION: 133,                       // version number of the code
+    VERSION: 134,                       // version number of the code
     SHOW_VERSION: true,                 // should we show the version number in the display
-}
+}, (typeof(logo_explosion_config) === "object" ? logo_explosion_config : {}) );     // apply external configuration override object, if there is one
 
 // config when "manual mode," with the user messing around
 const manual_config = Object.assign({}, wellspring_config);     // shallow copy
@@ -76,8 +76,8 @@ manual_config.DENSITY_DISSIPATION = 1;
 manual_config.VELOCITY_DISSIPATION = 0.6;       // default 0.2
 manual_config.PRESSURE = 0.8;
 manual_config.PRESSURE_ITERATIONS = 20;
-manual_config.SPLAT_RADIUS = 0.25;
-manual_config.SPLAT_FORCE = isMobile() ? 6000 : 7000;
+manual_config.SPLAT_RADIUS = isMobile() ? 0.2 : 0.25;
+manual_config.SPLAT_FORCE = isMobile() ? 5500 : 7000;
 // manual_config.CURL = 13;                // default 30
 manual_config.CURL = 0;                // default 30
 manual_config.BLOOM = true;
@@ -86,6 +86,7 @@ manual_config.SUNRAYS_WEIGHT = 1.0;
 manual_config.WELLSPRING = false;
 manual_config.TIME_DILATION = 1;
 
+// set up the current configuration
 let config = wellspring_config;
 let previous_config = null;
 
@@ -337,8 +338,6 @@ function getWebGLContext (canvas) {
         formatRG = getSupportedFormat(gl, gl.RGBA, gl.RGBA, halfFloatTexType);
         formatR = getSupportedFormat(gl, gl.RGBA, gl.RGBA, halfFloatTexType);
     }
-
-    ga('send', 'event', isWebGL2 ? 'webgl2' : 'webgl', formatRGBA == null ? 'not supported' : 'supported');
 
     return {
         gl,

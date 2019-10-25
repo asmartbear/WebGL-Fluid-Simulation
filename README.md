@@ -1,6 +1,8 @@
 # WP Engine Logo Fluid Simulation
 
-Try it [here](https://asmartbear.github.io/wpe-logo-fluid/).
+Full-screen simulation [here](https://asmartbear.github.io/wpe-logo-fluid/).
+
+Embedded into website [here](https://asmartbear.github.io/wpe-logo-fluid/wpe.html).
 
 ## References
 
