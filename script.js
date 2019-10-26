@@ -65,10 +65,13 @@ const wellspring_config = Object.assign( {
     WELLSPRING_SPLAT_FORCE: 800,		// velocity of splat moving out of the jet
     WELLSPRING_SATURATION: 0.5,		// how saturated to make the colors coming out of the jets    (0.5)
     WELLSPRING_RESUME_DELAY_MS: 3500,      // how long to wait after the last mouse input before enabling the automated wellspring
+    WELLSPRING_SPLAT_FORCE_REDUCTION_THRESHOLD: 0,  // after this many splats, reduce the splat force so we don't white-out the screen
     TIME_DILATION: 0.01,				// time is multiplied by this for actuals
-    VERSION: 138,                       // version number of the code
+    VERSION: 140,                       // version number of the code
     SHOW_VERSION: true,                 // should we show the version number in the display
 }, (typeof(logo_explosion_config) === "object" ? logo_explosion_config : {}) );     // apply external configuration override object, if there is one
+wellspring_config.WELLSPRING_SPLAT_FORCE_REDUCTION_THRESHOLD = wellspring_config.WELLSPRING_JET_COUNT * 2;    // compute based on number of jets
+
 
 // config when "manual mode," with the user messing around
 const manual_config = Object.assign({}, wellspring_config);     // shallow copy
@@ -140,6 +143,7 @@ const wpengine_colors = [
 const n_colors = wpengine_colors.length;
 const k_color_relatively_prime = 1;     // a number that is relatively prime to the number of colors, so we can cycle "randomly"
 let jet_color_idx = 0;
+let n_jet_shots = 0;
 
 function getNextColorIdx() {
     const r = jet_color_idx;
@@ -163,6 +167,7 @@ function initializeJets() {
             color_idx: getNextColorIdx(),       // index into the wpengine_colors array; initialize with something that spaces out the colors
         };
     }
+    n_jet_shots = 0;
 }
 
 // Take a step of jets being shot
@@ -179,7 +184,11 @@ function stepJets() {
             const offset_distance = config.WELLSPRING_JET_STUTTER*jets[j].shoot_idx + config.WELLSPRING_JET_OFFSET;
             const x = config.WELLSPRING_CX + offset_distance * dx;
             const y = config.WELLSPRING_CY + offset_distance * dy;
-            splat(x, y, config.WELLSPRING_SPLAT_FORCE * dx, config.WELLSPRING_SPLAT_FORCE * dy, wpengine_colors[jets[j].color_idx]);
+            let force = config.WELLSPRING_SPLAT_FORCE;
+            if ( n_jet_shots >= config.WELLSPRING_SPLAT_FORCE_REDUCTION_THRESHOLD ) {
+                force *= 0.7;
+            }
+            splat(x, y, force * dx, force * dy, wpengine_colors[jets[j].color_idx]);
             ++jets[j].shoot_idx;
 
             // Update step; finished shooting?  Yes if we've reached (close enough to) the edge of the window
@@ -198,6 +207,7 @@ function shootJet(j) {
     if ( j < 0 ) return;        // do nothing if the jet index is invalid
     jets[j].color_idx = getNextColorIdx();     // advance to the next color
     jets[j].shoot_idx = 0;          // start the jet
+    ++n_jet_shots;      // this now counts as a completed shot
 }
 
 // Selects a random jet to fire next.
