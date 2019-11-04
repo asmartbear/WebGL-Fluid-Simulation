@@ -59,7 +59,7 @@ const wellspring_config = Object.assign( {
     WELLSPRING_LOGO_BOX_SIZE: 0.2,      // size of the center box part of the logo
     WELLSPRING_SECS_BETWEEN_SHOTS: 1.0,		// how fast should the well-spring generate jets
     WELLSPRING_SECS_BETWEEN_SHOOT_STEPS: 0.025,     // time between each step of a single shot
-	WELLSPRING_JET_COUNT: isMobile() ? 5 : 9,		// how many jets to implement evenly around a circle
+	WELLSPRING_JET_COUNT: isMobile() ? 7 : 9,		// how many jets to implement evenly around a circle
 	WELLSPRING_JET_OFFSET: 0.08,		// how far from center each jet is  (0.13)
 	WELLSPRING_JET_STUTTER: 0.025,		// how far apart each splat it along one direction
 	WELLSPRING_JET_WAGGLE: 0.3,		// how much the jet randomly waggles around its direction
@@ -68,10 +68,10 @@ const wellspring_config = Object.assign( {
     WELLSPRING_RESUME_DELAY_MS: 3500,      // how long to wait after the last mouse input before enabling the automated wellspring
     WELLSPRING_SPLAT_FORCE_REDUCTION_THRESHOLD: 0,  // after this many splats, reduce the splat force so we don't white-out the screen
     TIME_DILATION: 0.01,				// time is multiplied by this for actuals
-    VERSION: 141,                       // version number of the code
+    VERSION: 142,                       // version number of the code
     SHOW_VERSION: true,                 // should we show the version number in the display
 }, (typeof(logo_explosion_config) === "object" ? logo_explosion_config : {}) );     // apply external configuration override object, if there is one
-wellspring_config.WELLSPRING_SPLAT_FORCE_REDUCTION_THRESHOLD = wellspring_config.WELLSPRING_JET_COUNT * 2;    // compute based on number of jets
+wellspring_config.WELLSPRING_SPLAT_FORCE_REDUCTION_THRESHOLD = isMobile() ? wellspring_config.WELLSPRING_JET_COUNT : (wellspring_config.WELLSPRING_JET_COUNT*2);    // compute based on number of jets
 
 
 // config when "manual mode," with the user messing around
@@ -187,7 +187,7 @@ function stepJets() {
             const y = config.WELLSPRING_CY + offset_distance * dy;
             let force = config.WELLSPRING_SPLAT_FORCE;
             if ( n_jet_shots >= config.WELLSPRING_SPLAT_FORCE_REDUCTION_THRESHOLD ) {
-                force *= 0.5;
+                force *= 0.3;
             }
             splat(x, y, force * dx, force * dy, wpengine_colors[jets[j].color_idx]);
             ++jets[j].shoot_idx;
