@@ -1448,8 +1448,8 @@ function logoOverlay() {
     
     // Version number (for debugging which version is being shown in Github Pages)
     if ( config.SHOW_VERSION ) {
-        st.fillStyle = "#ffffff";
-        st.font = '14px Courier New';
+        st.fillStyle = "#ff0000";
+        st.font = '16px Courier New';
         st.fillText( config.VERSION, 20, 20 );
     }
 }
