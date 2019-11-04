@@ -1,7 +1,8 @@
 /*
 MIT License
 
-Copyright (c) 2017 Pavel Dobryakov
+Original: Copyright (c) 2017 Pavel Dobryakov
+Additional: Copyright (c) 2019 Jason Cohen
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -67,7 +68,7 @@ const wellspring_config = Object.assign( {
     WELLSPRING_RESUME_DELAY_MS: 3500,      // how long to wait after the last mouse input before enabling the automated wellspring
     WELLSPRING_SPLAT_FORCE_REDUCTION_THRESHOLD: 0,  // after this many splats, reduce the splat force so we don't white-out the screen
     TIME_DILATION: 0.01,				// time is multiplied by this for actuals
-    VERSION: 140,                       // version number of the code
+    VERSION: 141,                       // version number of the code
     SHOW_VERSION: true,                 // should we show the version number in the display
 }, (typeof(logo_explosion_config) === "object" ? logo_explosion_config : {}) );     // apply external configuration override object, if there is one
 wellspring_config.WELLSPRING_SPLAT_FORCE_REDUCTION_THRESHOLD = wellspring_config.WELLSPRING_JET_COUNT * 2;    // compute based on number of jets
@@ -186,7 +187,7 @@ function stepJets() {
             const y = config.WELLSPRING_CY + offset_distance * dy;
             let force = config.WELLSPRING_SPLAT_FORCE;
             if ( n_jet_shots >= config.WELLSPRING_SPLAT_FORCE_REDUCTION_THRESHOLD ) {
-                force *= 0.7;
+                force *= 0.5;
             }
             splat(x, y, force * dx, force * dy, wpengine_colors[jets[j].color_idx]);
             ++jets[j].shoot_idx;
