@@ -69,7 +69,7 @@ const wellspring_config = Object.assign( {
     WELLSPRING_SPLAT_FORCE_REDUCTION_THRESHOLD: 0,  // after this many splats, reduce the splat force so we don't white-out the screen
     TIME_DILATION: 0.01,				// time is multiplied by this for actuals
     VERSION: 145,                       // version number of the code
-    SHOW_VERSION: true,                 // should we show the version number in the display
+    SHOW_VERSION: false,                 // should we show the version number in the display
 }, (typeof(logo_explosion_config) === "object" ? logo_explosion_config : {}) );     // apply external configuration override object, if there is one
 wellspring_config.WELLSPRING_SPLAT_FORCE_REDUCTION_THRESHOLD = isMobile() ? wellspring_config.WELLSPRING_JET_COUNT : (wellspring_config.WELLSPRING_JET_COUNT*2);    // compute based on number of jets
 
